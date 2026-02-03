@@ -1,0 +1,92 @@
+{
+  "login": {
+    "title": "Login",
+    "subtitle": "Please login to continue using MFP-Feedback system",
+    "username": "Username",
+    "password": "Password",
+    "captcha": "Verification Code",
+    "rememberMe": "Remember Me",
+    "forgotPassword": "Forgot Password?",
+    "login": "Login",
+    "mobileLogin": "SMS Login",
+    "qrcodeLogin": "QR Code Login",
+    "thirdPartyLogin": "Other Login Methods",
+    "selectAccount": "Select Account",
+    "usernameTip": "Please enter username",
+    "passwordTip": "Please enter password",
+    "verifyRequiredTip": "Please complete verification",
+    "welcomeBack": "Welcome Back"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "statistics": "Statistics",
+    "charts": "Chart Analysis"
+  },
+  "purchaseOrder": {
+    "title": "Purchase Order",
+    "list": "Order List",
+    "add": "Add Order",
+    "edit": "Edit Order",
+    "delete": "Delete Order",
+    "detail": "Order Detail"
+  },
+  "productionPlan": {
+    "title": "Production Plan",
+    "list": "Plan List",
+    "add": "Add Plan",
+    "edit": "Edit Plan",
+    "delete": "Delete Plan",
+    "import": "Import Plan",
+    "export": "Export Plan"
+  },
+  "progressFeedback": {
+    "title": "Progress Feedback",
+    "list": "Feedback List",
+    "add": "Add Feedback",
+    "edit": "Edit Feedback",
+    "delete": "Delete Feedback"
+  },
+  "todo": {
+    "title": "Todo List",
+    "list": "Todo List",
+    "add": "Add Todo",
+    "edit": "Edit Todo",
+    "delete": "Delete Todo",
+    "complete": "Complete Todo"
+  },
+  "permission": {
+    "title": "Permission Management",
+    "user": "User Management",
+    "role": "Role Management",
+    "permission": "Permission Settings"
+  },
+  "monitor": {
+    "title": "Data Monitoring",
+    "dashboard": "Monitoring Panel",
+    "analytics": "Data Analysis",
+    "alerts": "Alert Information"
+  },
+  "common": {
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "Personal Center",
+    "settings": "Settings",
+    "help": "Help",
+    "success": "Operation Success",
+    "error": "Operation Failed",
+    "warning": "Warning",
+    "info": "Information",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "add": "Add",
+    "edit": "Edit",
+    "search": "Search",
+    "reset": "Reset",
+    "page": "Page",
+    "size": "Page Size",
+    "total": "Total"
+  }
+}

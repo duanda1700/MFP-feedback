@@ -1,0 +1,92 @@
+{
+  "login": {
+    "title": "登录",
+    "subtitle": "请登录您的账号以继续使用 MFP-Feedback 系统",
+    "username": "用户名",
+    "password": "密码",
+    "captcha": "验证码",
+    "rememberMe": "记住密码",
+    "forgotPassword": "忘记密码？",
+    "login": "登录",
+    "mobileLogin": "短信登录",
+    "qrcodeLogin": "二维码登录",
+    "thirdPartyLogin": "其他登录方式",
+    "selectAccount": "选择账号",
+    "usernameTip": "请输入用户名",
+    "passwordTip": "请输入密码",
+    "verifyRequiredTip": "请完成验证",
+    "welcomeBack": "欢迎回来"
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "overview": "概览",
+    "statistics": "统计数据",
+    "charts": "图表分析"
+  },
+  "purchaseOrder": {
+    "title": "采购订单",
+    "list": "订单列表",
+    "add": "添加订单",
+    "edit": "编辑订单",
+    "delete": "删除订单",
+    "detail": "订单详情"
+  },
+  "productionPlan": {
+    "title": "生产计划",
+    "list": "计划列表",
+    "add": "添加计划",
+    "edit": "编辑计划",
+    "delete": "删除计划",
+    "import": "导入计划",
+    "export": "导出计划"
+  },
+  "progressFeedback": {
+    "title": "进度反馈",
+    "list": "反馈列表",
+    "add": "添加反馈",
+    "edit": "编辑反馈",
+    "delete": "删除反馈"
+  },
+  "todo": {
+    "title": "待办事项",
+    "list": "待办列表",
+    "add": "添加待办",
+    "edit": "编辑待办",
+    "delete": "删除待办",
+    "complete": "完成待办"
+  },
+  "permission": {
+    "title": "权限管理",
+    "user": "用户管理",
+    "role": "角色管理",
+    "permission": "权限设置"
+  },
+  "monitor": {
+    "title": "数据监控",
+    "dashboard": "监控面板",
+    "analytics": "数据分析",
+    "alerts": "预警信息"
+  },
+  "common": {
+    "login": "登录",
+    "logout": "退出登录",
+    "profile": "个人中心",
+    "settings": "设置",
+    "help": "帮助",
+    "success": "操作成功",
+    "error": "操作失败",
+    "warning": "警告",
+    "info": "信息",
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "add": "添加",
+    "edit": "编辑",
+    "search": "搜索",
+    "reset": "重置",
+    "page": "页码",
+    "size": "每页条数",
+    "total": "总条数"
+  }
+}
