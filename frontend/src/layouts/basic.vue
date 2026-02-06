@@ -24,6 +24,12 @@
               <span>采购订单外发</span>
             </template>
           </el-menu-item>
+          <el-menu-item index="/app/purchase-track">
+            <template #title>
+              <i class="el-icon-location"></i>
+              <span>采购订单跟踪</span>
+            </template>
+          </el-menu-item>
           <el-menu-item index="/app/production-plan">
             <template #title>
               <i class="el-icon-s-grid"></i>

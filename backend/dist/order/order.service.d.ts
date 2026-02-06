@@ -41,4 +41,5 @@ export declare class OrderService {
     }>;
     updatePlanStatus(materialCode: string, planStatus: string): Promise<ProductionPlan>;
     updateRemarks(materialCode: string, remarks: string): Promise<ProductionPlan>;
+    updateOrderStatus(id: number, status: string): Promise<PurchaseOrder>;
 }

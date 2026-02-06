@@ -352,4 +352,32 @@ export class OrderService {
     console.log(`Remarks updated successfully: ${updatedPlan.id}`);
     return updatedPlan;
   }
+
+  // 更新采购订单状态
+  async updateOrderStatus(id: number, status: string) {
+    console.log(`Updating order status for id: ${id} to: ${status}`);
+    
+    // 状态映射
+    const statusMap: Record<string, string> = {
+      'pending': '待处理',
+      'processing': '处理中',
+      'completed': '已完成'
+    };
+
+    const actualStatus = statusMap[status] || status;
+    
+    // 查找订单
+    const order = await this.orderRepository.findOne({ where: { id } });
+    if (!order) {
+      console.error(`Order not found for id: ${id}`);
+      throw new NotFoundException('Order not found');
+    }
+    
+    // 更新状态
+    order.orderStatus = actualStatus;
+    const updatedOrder = await this.orderRepository.save(order);
+    
+    console.log(`Order status updated successfully: ${updatedOrder.id}`);
+    return updatedOrder;
+  }
 }

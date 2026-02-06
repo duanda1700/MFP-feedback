@@ -54,6 +54,9 @@ let OrderController = class OrderController {
     async updateRemarks(body) {
         return this.orderService.updateRemarks(body.materialCode, body.remarks);
     }
+    async updateOrderStatus(id, body) {
+        return this.orderService.updateOrderStatus(id, body.status);
+    }
 };
 exports.OrderController = OrderController;
 __decorate([
@@ -144,6 +147,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OrderController.prototype, "updateRemarks", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Put)('update-status/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "updateOrderStatus", null);
 exports.OrderController = OrderController = __decorate([
     (0, common_1.Controller)('api/order'),
     __metadata("design:paramtypes", [order_service_1.OrderService])

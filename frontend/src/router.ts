@@ -36,6 +36,12 @@ const routes = [
         meta: { title: '采购订单外发' }
       },
       {
+        path: 'purchase-track',
+        name: 'PurchaseTrack',
+        component: () => import('./views/PurchaseTrack.vue'),
+        meta: { title: '采购订单跟踪' }
+      },
+      {
         path: 'production-plan',
         name: 'ProductionPlan',
         component: () => import('./views/ProductionPlan.vue'),

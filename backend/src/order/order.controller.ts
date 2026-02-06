@@ -71,4 +71,10 @@ export class OrderController {
   async updateRemarks(@Body() body: { materialCode: string; remarks: string }) {
     return this.orderService.updateRemarks(body.materialCode, body.remarks);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('update-status/:id')
+  async updateOrderStatus(@Param('id') id: number, @Body() body: { status: string }) {
+    return this.orderService.updateOrderStatus(id, body.status);
+  }
 }

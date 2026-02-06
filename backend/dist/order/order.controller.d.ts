@@ -48,4 +48,7 @@ export declare class OrderController {
         materialCode: string;
         remarks: string;
     }): Promise<import("../database/entities/production-plan.entity").ProductionPlan>;
+    updateOrderStatus(id: number, body: {
+        status: string;
+    }): Promise<import("../database/entities/purchase-order.entity").PurchaseOrder>;
 }

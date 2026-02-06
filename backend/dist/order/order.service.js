@@ -264,6 +264,24 @@ let OrderService = class OrderService {
         console.log(`Remarks updated successfully: ${updatedPlan.id}`);
         return updatedPlan;
     }
+    async updateOrderStatus(id, status) {
+        console.log(`Updating order status for id: ${id} to: ${status}`);
+        const statusMap = {
+            'pending': '待处理',
+            'processing': '处理中',
+            'completed': '已完成'
+        };
+        const actualStatus = statusMap[status] || status;
+        const order = await this.orderRepository.findOne({ where: { id } });
+        if (!order) {
+            console.error(`Order not found for id: ${id}`);
+            throw new common_1.NotFoundException('Order not found');
+        }
+        order.orderStatus = actualStatus;
+        const updatedOrder = await this.orderRepository.save(order);
+        console.log(`Order status updated successfully: ${updatedOrder.id}`);
+        return updatedOrder;
+    }
 };
 exports.OrderService = OrderService;
 exports.OrderService = OrderService = __decorate([

@@ -15,6 +15,7 @@ export const purchaseOrderApi = {
   getWideTableData: (id: number) => request.get(`/order/wide-table/${id}`),
   markKeyMaterial: (data: { orderDetailId: string; isKeyMaterial: boolean }) => request.post('/order/mark-key-material', data),
   issueTask: (data: { orderId: number; supplierId: number }) => request.post('/order/issue-task', data),
+  updateStatus: (id: number, status: string) => request.put(`/order/update-status/${id}`, { status }),
   updatePlanStatus: (data: { materialCode: string; planStatus: string }) => request.put('/order/update-plan-status', data),
   updateRemarks: (data: { materialCode: string; remarks: string }) => request.put('/order/update-remarks', data)
 };
