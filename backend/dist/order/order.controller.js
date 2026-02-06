@@ -45,6 +45,15 @@ let OrderController = class OrderController {
     async deleteOrder(id) {
         return this.orderService.deleteOrder(id);
     }
+    async getWideTableData(id) {
+        return this.orderService.getWideTableData(id);
+    }
+    async updatePlanStatus(body) {
+        return this.orderService.updatePlanStatus(body.materialCode, body.planStatus);
+    }
+    async updateRemarks(body) {
+        return this.orderService.updateRemarks(body.materialCode, body.remarks);
+    }
 };
 exports.OrderController = OrderController;
 __decorate([
@@ -111,6 +120,30 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], OrderController.prototype, "deleteOrder", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Get)('wide-table/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "getWideTableData", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Put)('update-plan-status'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "updatePlanStatus", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Put)('update-remarks'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "updateRemarks", null);
 exports.OrderController = OrderController = __decorate([
     (0, common_1.Controller)('api/order'),
     __metadata("design:paramtypes", [order_service_1.OrderService])

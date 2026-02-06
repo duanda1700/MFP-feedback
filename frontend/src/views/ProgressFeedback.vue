@@ -1,17 +1,21 @@
 <template>
   <div class="progress-feedback-container">
-    <h2>进度反馈管理</h2>
+    <h2>计划进度反馈管理</h2>
     
     <!-- 搜索和筛选 -->
     <div class="search-filter-container">
       <el-card>
         <el-form :inline="true" :model="searchForm" class="search-form">
-          <el-form-item label="计划编号">
-            <el-input v-model="searchForm.planNo" placeholder="请输入计划编号" />
+          <el-form-item label="订单编号">
+            <el-input v-model="searchForm.orderNo" placeholder="请输入订单编号" />
           </el-form-item>
           
           <el-form-item label="物料图号">
             <el-input v-model="searchForm.materialCode" placeholder="请输入物料图号" />
+          </el-form-item>
+          
+          <el-form-item label="项目">
+            <el-input v-model="searchForm.project" placeholder="请输入项目" />
           </el-form-item>
           
           <el-form-item label="状态">
@@ -30,122 +34,138 @@
       </el-card>
     </div>
     
-    <!-- 双列表展示 -->
-    <div class="dual-list-container">
-      <!-- 左侧：承制订单列表 -->
-      <el-card class="order-list-card">
-        <template #header>
-          <span>承制订单列表</span>
-        </template>
-        <el-table :data="orderList" style="width: 100%" @row-click="handleOrderClick">
-          <el-table-column prop="orderNo" label="订单编号" />
-          <el-table-column prop="materialCode" label="物料图号" />
-          <el-table-column prop="materialName" label="物料名称" />
-          <el-table-column prop="quantity" label="数量" width="100" />
-          <el-table-column prop="deliveryDate" label="交货日期" width="180" />
-          <el-table-column prop="status" label="状态" width="120">
-            <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.status)">
-                {{ getStatusText(scope.row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
+    <!-- 双表布局 -->
+    <div class="dual-table-layout">
+      <!-- 采购订单主表（极简化，导航功能） -->
+      <div class="primary-table-container">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span>采购订单导航</span>
+            </div>
+          </template>
+          
+          <el-table 
+            :data="orderList" 
+            style="width: 100%"
+            @row-click="handleOrderSelect"
+            :row-class-name="tableRowClassName"
+          >
+            <el-table-column label="订单信息" width="300">
+              <template #default="scope">
+                <div class="order-info-cell">
+                  <div class="order-info-item">
+                    <span class="order-info-label">订单编号:</span>
+                    <span class="order-info-value">{{ scope.row.orderNo }}</span>
+                  </div>
+                  <div class="order-info-item">
+                    <span class="order-info-label">项目:</span>
+                    <span class="order-info-value">{{ scope.row.project }}</span>
+                  </div>
+                  <div class="order-info-item">
+                    <span class="order-info-label">台份:</span>
+                    <span class="order-info-value">{{ scope.row.setCount }}</span>
+                  </div>
+                  <div class="order-info-item">
+                    <span class="order-info-label">状态:</span>
+                    <el-tag :type="getStatusType(scope.row.status)" size="small">
+                      {{ getStatusText(scope.row.status) }}
+                    </el-tag>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+          
+          <!-- 分页 -->
+          <div class="pagination-container">
+            <el-pagination
+              v-model:current-page="pagination.currentPage"
+              v-model:page-size="pagination.pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next"
+              :total="pagination.total"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
+          </div>
+        </el-card>
+      </div>
       
-      <!-- 右侧：计划明细反馈表 -->
-      <el-card class="feedback-form-card">
-        <template #header>
-          <span>计划明细反馈表</span>
-          <el-button type="primary" @click="handleSubmitFeedback" v-if="selectedOrder">提交反馈</el-button>
-        </template>
-        
-        <div v-if="selectedOrder" class="feedback-form">
-          <el-form :model="feedbackForm" label-width="120px">
-            <el-form-item label="订单编号">
-              <el-input v-model="feedbackForm.orderNo" disabled />
-            </el-form-item>
-            
-            <el-form-item label="物料图号">
-              <el-input v-model="feedbackForm.materialCode" disabled />
-            </el-form-item>
-            
-            <el-form-item label="物料名称">
-              <el-input v-model="feedbackForm.materialName" disabled />
-            </el-form-item>
-            
-            <el-form-item label="数量">
-              <el-input v-model="feedbackForm.quantity" disabled />
-            </el-form-item>
-            
-            <el-form-item label="责任人">
-              <el-input v-model="feedbackForm.responsiblePerson" />
-            </el-form-item>
-            
-            <el-form-item label="计划状态">
-              <el-select v-model="feedbackForm.status">
-                <el-option label="待开始" value="pending" />
-                <el-option label="执行中" value="executing" />
-                <el-option label="已完成" value="completed" />
-              </el-select>
-            </el-form-item>
-            
-            <el-form-item label="备注">
-              <el-input v-model="feedbackForm.remarks" type="textarea" :rows="4" />
-            </el-form-item>
-            
-            <el-form-item label="关键零部件标记">
-              <el-switch v-model="feedbackForm.isKeyMaterial" />
-            </el-form-item>
-            
-            <el-form-item label="制造符合性检查">
-              <el-switch v-model="feedbackForm.isConformityCheck" />
-            </el-form-item>
-            
-            <el-form-item label="检查时间点" v-if="feedbackForm.isConformityCheck">
-              <el-date-picker v-model="feedbackForm.checkTime" type="datetime" placeholder="请选择检查时间" />
-            </el-form-item>
-          </el-form>
-        </div>
-        
-        <div v-else class="no-selection">
-          <p>请从左侧选择一个订单进行反馈</p>
-        </div>
-      </el-card>
+      <!-- 采购订单明细副表（主要表单，所有交互） -->
+      <div class="secondary-table-container">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span>采购订单明细反馈表</span>
+              <div class="header-actions">
+                <el-button size="small" type="primary" @click="handleSubmitFeedback" v-if="selectedOrder">提交反馈</el-button>
+              </div>
+            </div>
+          </template>
+          
+          <div v-if="selectedOrder">
+            <!-- 宽表：purchase_details与production_plan组成 -->
+            <div class="wide-table-container">
+              <el-table :data="wideTableData" style="width: 100%" v-loading="wideTableLoading">
+                <el-table-column prop="materialCode" label="物料图号" width="180" />
+                <el-table-column prop="materialDesc" label="物料名称" width="200" />
+                <el-table-column prop="quantity" label="数量" width="100" />
+                <el-table-column prop="drawingNo" label="图号" width="150" />
+                <el-table-column prop="purchasePlanDate" label="采购计划日期" width="180" />
+                <el-table-column prop="productionPlanDate" label="生产计划日期" width="180" />
+                <el-table-column prop="planStatus" label="计划状态" width="120">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.planStatus" placeholder="请选择计划状态" @change="handlePlanStatusChange(scope.row)">
+                      <el-option label="待处理" value="待处理" />
+                      <el-option label="处理中" value="处理中" />
+                      <el-option label="已完成" value="已完成" />
+                      <el-option label="未知" value="未知" />
+                    </el-select>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="remarks" label="备注">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.remarks" placeholder="请输入备注" @change="handleRemarksChange(scope.row)" />
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </div>
+          
+          <div v-else class="no-selection">
+            <p>请从左侧选择一个订单进行反馈</p>
+          </div>
+        </el-card>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { progressFeedbackApi } from '../api';
+import { purchaseOrderApi } from '../api';
 
+const selectedOrder = ref<any>(null);
+const orderList = ref<any[]>([]);
+const detailsLoading = ref(false);
+const wideTableData = ref<any[]>([]);
+const wideTableLoading = ref(false);
+
+// 搜索表单
 const searchForm = reactive({
-  planNo: '',
+  orderNo: '',
   materialCode: '',
+  project: '',
   status: ''
 });
 
-// 模拟数据
-const orderList = ref([
-  { id: '1', orderNo: 'PO-2026-0001', materialCode: 'MAT-001', materialName: '物料A', quantity: 100, deliveryDate: '2026-03-01', status: 'pending' },
-  { id: '2', orderNo: 'PO-2026-0002', materialCode: 'MAT-002', materialName: '物料B', quantity: 200, deliveryDate: '2026-03-15', status: 'submitted' },
-  { id: '3', orderNo: 'PO-2026-0003', materialCode: 'MAT-003', materialName: '物料C', quantity: 150, deliveryDate: '2026-04-01', status: 'confirmed' }
-]);
-
-const selectedOrder = ref<any>(null);
-const feedbackForm = reactive({
-  orderNo: '',
-  materialCode: '',
-  materialName: '',
-  quantity: '',
-  responsiblePerson: '',
-  status: 'pending',
-  remarks: '',
-  isKeyMaterial: false,
-  isConformityCheck: false,
-  checkTime: null
+// 分页
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0
 });
 
 const getStatusType = (status: string) => {
@@ -174,12 +194,117 @@ const getStatusText = (status: string) => {
   }
 };
 
+// 存储变更的数据
+const changes = ref<any[]>([]);
+
+// 处理计划状态变更
+const handlePlanStatusChange = (row: any) => {
+  console.log('Plan status changed:', row);
+  // 检查是否已经存在该物料的变更
+  const existingChangeIndex = changes.value.findIndex(change => change.materialCode === row.materialCode);
+  if (existingChangeIndex >= 0) {
+    // 更新现有变更
+    changes.value[existingChangeIndex].planStatus = row.planStatus;
+  } else {
+    // 添加新变更
+    changes.value.push({
+      materialCode: row.materialCode,
+      planStatus: row.planStatus,
+      remarks: row.remarks
+    });
+  }
+  ElMessage.info('计划状态已暂存，点击"提交反馈"按钮保存');
+};
+
+// 处理备注变更
+const handleRemarksChange = (row: any) => {
+  console.log('Remarks changed:', row);
+  // 检查是否已经存在该物料的变更
+  const existingChangeIndex = changes.value.findIndex(change => change.materialCode === row.materialCode);
+  if (existingChangeIndex >= 0) {
+    // 更新现有变更
+    changes.value[existingChangeIndex].remarks = row.remarks;
+  } else {
+    // 添加新变更
+    changes.value.push({
+      materialCode: row.materialCode,
+      planStatus: row.planStatus,
+      remarks: row.remarks
+    });
+  }
+  ElMessage.info('备注已暂存，点击"提交反馈"按钮保存');
+};
+
+// 提交反馈
+const handleSubmitFeedback = async () => {
+  if (!selectedOrder.value) {
+    ElMessage.warning('请选择一个订单进行反馈');
+    return;
+  }
+  
+  if (changes.value.length === 0) {
+    ElMessage.warning('没有需要提交的变更');
+    return;
+  }
+  
+  try {
+    // 批量提交所有变更
+    for (const change of changes.value) {
+      // 更新计划状态
+      if (change.planStatus) {
+        await purchaseOrderApi.updatePlanStatus({
+          materialCode: change.materialCode,
+          planStatus: change.planStatus
+        });
+      }
+      // 更新备注
+      if (change.remarks !== undefined) {
+        await purchaseOrderApi.updateRemarks({
+          materialCode: change.materialCode,
+          remarks: change.remarks
+        });
+      }
+    }
+    
+    ElMessage.success('反馈提交成功');
+    // 清空变更记录
+    changes.value = [];
+    // 重新加载数据
+    await loadWideTableData(selectedOrder.value.id);
+  } catch (error) {
+    console.error('Submit feedback error:', error);
+    ElMessage.error('反馈提交失败');
+  }
+};
+
 const handleSearch = async () => {
   try {
-    const response = await progressFeedbackApi.getList(searchForm);
-    orderList.value = response.data || [];
+    // 构建搜索参数
+    const searchParams = {
+      orderNo: searchForm.orderNo,
+      materialCode: searchForm.materialCode,
+      project: searchForm.project,
+      status: searchForm.status,
+      page: pagination.currentPage,
+      pageSize: pagination.pageSize
+    };
+    
+    // 调用后端API获取采购订单列表
+    const response = await purchaseOrderApi.getList(searchParams);
+    
+    // 转换后端返回的数据结构
+    orderList.value = (response.data || []).map((order: any) => ({
+      id: order.id,
+      orderNo: order.djbH, // 使用订单编号
+      project: order.project, // 使用项目
+      setCount: order.setCount, // 使用台份
+      status: order.orderStatus || 'pending' // 使用订单状态
+    }));
+    
+    pagination.total = response.total || 0;
+    ElMessage.success('搜索成功');
   } catch (error) {
-    console.error('Search progress feedback error:', error);
+    console.error('Search purchase order error:', error);
     ElMessage.error('搜索失败');
   }
 };
@@ -188,43 +313,59 @@ const resetSearch = () => {
   Object.keys(searchForm).forEach(key => {
     searchForm[key as keyof typeof searchForm] = '';
   });
+  pagination.currentPage = 1;
   handleSearch();
 };
 
-const handleOrderClick = (row: any) => {
-  selectedOrder.value = row;
-  // 填充反馈表单
-  feedbackForm.orderNo = row.orderNo;
-  feedbackForm.materialCode = row.materialCode;
-  feedbackForm.materialName = row.materialName;
-  feedbackForm.quantity = row.quantity;
-  feedbackForm.responsiblePerson = '';
-  feedbackForm.status = 'pending';
-  feedbackForm.remarks = '';
-  feedbackForm.isKeyMaterial = false;
-  feedbackForm.isConformityCheck = false;
-  feedbackForm.checkTime = null;
+const handleSizeChange = (size: number) => {
+  pagination.pageSize = size;
+  handleSearch();
 };
 
-const handleSubmitFeedback = async () => {
-  if (!selectedOrder.value) {
-    ElMessage.warning('请选择一个订单进行反馈');
-    return;
-  }
+const handleCurrentChange = (current: number) => {
+  pagination.currentPage = current;
+  handleSearch();
+};
+
+// 订单选择
+const handleOrderSelect = async (row: any) => {
+  selectedOrder.value = row;
+  // 清空之前的变更记录
+  changes.value = [];
   
+  // 加载宽表数据
+  await loadWideTableData(row.id);
+};
+
+// 加载宽表数据
+const loadWideTableData = async (orderId: string) => {
+  wideTableLoading.value = true;
   try {
-    await progressFeedbackApi.submit({
-      orderId: selectedOrder.value.id,
-      ...feedbackForm
-    });
-    ElMessage.success('反馈提交成功');
-    // 更新订单状态
-    selectedOrder.value.status = 'submitted';
+    // 调用后端API获取宽表数据
+    const response = await purchaseOrderApi.getWideTableData(parseInt(orderId));
+    wideTableData.value = response.data || [];
   } catch (error) {
-    console.error('Submit feedback error:', error);
-    ElMessage.error('反馈提交失败');
+    console.error('Load wide table data error:', error);
+    ElMessage.error('加载宽表数据失败');
+    wideTableData.value = [];
+  } finally {
+    wideTableLoading.value = false;
   }
 };
+
+// 表格行样式
+const tableRowClassName = ({ row }: { row: any }) => {
+  return selectedOrder.value?.id === row.id ? 'selected-row' : '';
+};
+
+// 初始化
+onMounted(async () => {
+  try {
+    await handleSearch();
+  } catch (error) {
+    console.error('Initialize error:', error);
+  }
+});
 </script>
 
 <style scoped>
@@ -243,20 +384,78 @@ const handleSubmitFeedback = async () => {
 
 .search-form {
   margin-bottom: 0;
+  flex-wrap: wrap;
 }
 
-.dual-list-container {
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 双表布局 */
+.dual-table-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 320px 1fr;
   gap: 20px;
+  margin-top: 20px;
 }
 
-.order-list-card {
-  height: fit-content;
+.primary-table-container {
+  min-width: 300px;
+  max-width: 320px;
 }
 
-.feedback-form-card {
-  height: fit-content;
+.secondary-table-container {
+  flex: 1;
+}
+
+/* 订单信息单元格样式 */
+.order-info-cell {
+  padding: 8px;
+}
+
+.order-info-item {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.order-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.order-info-label {
+  font-weight: 500;
+  margin-right: 8px;
+  min-width: 60px;
+  font-size: 12px;
+}
+
+.order-info-value {
+  font-size: 12px;
+  color: #333;
+  word-break: break-all;
+}
+
+/* 选中行样式 */
+:deep(.selected-row) {
+  background-color: #e6f7ff !important;
+}
+
+:deep(.el-table__row:hover) {
+  background-color: #f0f9ff !important;
 }
 
 .no-selection {
@@ -265,13 +464,15 @@ const handleSubmitFeedback = async () => {
   color: #999;
 }
 
-.feedback-form {
-  margin-top: 20px;
-}
-
-@media (max-width: 1200px) {
-  .dual-list-container {
+/* 响应式设计 */
+@media screen and (max-width: 1200px) {
+  .dual-table-layout {
     grid-template-columns: 1fr;
+  }
+  
+  .primary-table-container {
+    min-width: auto;
+    max-width: 100%;
   }
 }
 </style>

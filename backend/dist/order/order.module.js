@@ -13,12 +13,13 @@ const order_service_1 = require("./order.service");
 const order_controller_1 = require("./order.controller");
 const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
 const purchase_details_entity_1 = require("../database/entities/purchase-details.entity");
+const production_plan_entity_1 = require("../database/entities/production-plan.entity");
 let OrderModule = class OrderModule {
 };
 exports.OrderModule = OrderModule;
 exports.OrderModule = OrderModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([purchase_order_entity_1.PurchaseOrder, purchase_details_entity_1.PurchaseDetails])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([purchase_order_entity_1.PurchaseOrder, purchase_details_entity_1.PurchaseDetails, production_plan_entity_1.ProductionPlan])],
         providers: [order_service_1.OrderService],
         controllers: [order_controller_1.OrderController],
         exports: [order_service_1.OrderService],

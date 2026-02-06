@@ -70,6 +70,7 @@ async function seedTestData() {
     console.log('开始插入采购订单测试数据...');
     const orderCount = 10;
     const detailsPerOrder = 10; // 每个订单10条详情，共100条
+    const purchaseDetailsIds: string[] = []; // 存储采购详情ID，用于生产计划的外键关联
     
     for (let i = 1; i <= orderCount; i++) {
       const instanceId = i;
@@ -115,6 +116,7 @@ async function seedTestData() {
           detailStatus: ['待处理', '处理中', '已完成'][j % 3]
         });
         await purchaseDetailsRepository.save(purchaseDetails);
+        purchaseDetailsIds.push(id); // 存储采购详情ID
         if (detailIndex % 10 === 0) {
           console.log(`已插入 ${detailIndex} 条采购详情`);
         }
@@ -124,26 +126,37 @@ async function seedTestData() {
 
     // 插入生产计划测试数据
     console.log('开始插入生产计划测试数据...');
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 0; i < 100; i++) {
+      // 生成16位ID：PP + 时间戳后8位 + 序号后4位
+      const timestamp = Date.now().toString().slice(-8);
+      const seq = (i + 1).toString().padStart(4, '0');
+      const id = `PP${timestamp}${seq}`.slice(0, 16);
+      
       const productionPlan = productionPlanRepository.create({
-        id: `PP${Date.now()}${i}`,
-        bpmScjhId: i,
-        bpmScjhInstanceId: i,
-        planName: `生产计划${i}`,
+        id: id,
+        purchaseDetailsId: i + 1, // 使用数字ID
+        planName: `生产计划${i + 1}`,
         planType: '测试类型',
         planDept: '生产部门',
         planMaker: '管理员',
         planDate: new Date(),
-        quantity: 100 * i,
+        quantity: 100 * (i + 1),
+        unit: '个',
         plannedDate: new Date(),
         finishedQuantity: 0,
-        planStatus: '待处理',
-        materialCode: `MAT${i}`,
-        materialDesc: `物料${i}`
+        planStatus: ['待处理', '处理中', '已完成'][(i + 1) % 3],
+        materialCode: `MAT${i + 1}`,
+        materialDesc: `物料${i + 1}`,
+        isKeyMaterial: (i + 1) % 2 === 0 ? '是' : '否',
+        productionLine: `生产线${(i + 1) % 5 + 1}`,
+        remarks: `备注${i + 1}`
       });
       await productionPlanRepository.save(productionPlan);
-      console.log(`插入生产计划: ${productionPlan.planName}`);
+      if ((i + 1) % 10 === 0) {
+        console.log(`已插入 ${i + 1} 条生产计划`);
+      }
     }
+    console.log('生产计划插入完成，共插入 100 条数据');
 
     // 插入反馈数据测试数据
     console.log('开始插入反馈数据测试数据...');

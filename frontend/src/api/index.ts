@@ -11,14 +11,18 @@ export const authApi = {
 // 采购订单相关API
 export const purchaseOrderApi = {
   getList: (params: any) => request.get('/order/list', { params }),
-  getDetail: (id: string) => request.get(`/order/detail/${id}`),
+  getDetail: (id: number) => request.get(`/order/detail/${id}`),
+  getWideTableData: (id: number) => request.get(`/order/wide-table/${id}`),
   markKeyMaterial: (data: { orderDetailId: string; isKeyMaterial: boolean }) => request.post('/order/mark-key-material', data),
-  issueTask: (data: { orderId: number; supplierId: number }) => request.post('/order/issue-task', data)
+  issueTask: (data: { orderId: number; supplierId: number }) => request.post('/order/issue-task', data),
+  updatePlanStatus: (data: { materialCode: string; planStatus: string }) => request.put('/order/update-plan-status', data),
+  updateRemarks: (data: { materialCode: string; remarks: string }) => request.put('/order/update-remarks', data)
 };
 
 // 生产计划相关API
 export const productionPlanApi = {
   getList: (params: any) => request.get('/plan/list', { params }),
+  getDetail: (id: string) => request.get(`/plan/detail/${id}`),
   create: (data: any) => request.post('/plan/create', data),
   update: (id: string, data: any) => request.put(`/plan/update/${id}`, data),
   delete: (id: string) => request.delete(`/plan/delete/${id}`),
@@ -29,10 +33,10 @@ export const productionPlanApi = {
 
 // 进度反馈相关API
 export const progressFeedbackApi = {
-  getList: (params: any) => request.get('/progress-feedback/list', { params }),
-  getDetail: (id: string) => request.get(`/progress-feedback/detail/${id}`),
-  update: (id: string, data: any) => request.put(`/progress-feedback/update/${id}`, data),
-  submit: (data: any) => request.post('/progress-feedback/submit', data)
+  getList: (params: any) => request.get('/feedback/list', { params }),
+  getDetail: (id: string) => request.get(`/feedback/detail/${id}`),
+  update: (id: string, data: any) => request.put(`/feedback/update/${id}`, data),
+  submit: (data: any) => request.post('/feedback/submit', data)
 };
 
 // 待办任务相关API

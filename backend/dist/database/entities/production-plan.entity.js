@@ -13,19 +13,22 @@ exports.ProductionPlan = void 0;
 const typeorm_1 = require("typeorm");
 let ProductionPlan = class ProductionPlan {
     id;
-    bpmScjhId;
-    bpmScjhInstanceId;
+    purchaseDetailsId;
     planName;
     planType;
     planDept;
     planMaker;
     planDate;
-    quantity;
-    plannedDate;
-    finishedQuantity;
     planStatus;
     materialCode;
     materialDesc;
+    quantity;
+    unit;
+    plannedDate;
+    finishedQuantity;
+    isKeyMaterial;
+    productionLine;
+    remarks;
     createTime;
     updateTime;
 };
@@ -35,16 +38,13 @@ __decorate([
     __metadata("design:type", String)
 ], ProductionPlan.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'bpm_scjh_id', type: 'bigint', nullable: false }),
-    __metadata("design:type", Number)
-], ProductionPlan.prototype, "bpmScjhId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'bpm_scjh_instance_id', type: 'bigint', nullable: false }),
+    (0, typeorm_1.Column)({ name: 'purchase_details_id', type: 'bigint', nullable: false }),
     (0, typeorm_1.Index)(),
     __metadata("design:type", Number)
-], ProductionPlan.prototype, "bpmScjhInstanceId", void 0);
+], ProductionPlan.prototype, "purchaseDetailsId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'plan_name', type: 'varchar', length: 100, nullable: false }),
+    (0, typeorm_1.Index)(),
     __metadata("design:type", String)
 ], ProductionPlan.prototype, "planName", void 0);
 __decorate([
@@ -64,9 +64,27 @@ __decorate([
     __metadata("design:type", Date)
 ], ProductionPlan.prototype, "planDate", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'plan_status', type: 'varchar', length: 20, nullable: false }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "planStatus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'material_code', type: 'varchar', length: 200, nullable: false }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "materialCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'material_desc', type: 'varchar', length: 200, nullable: false }),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "materialDesc", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'quantity', type: 'decimal', precision: 18, scale: 6, nullable: false }),
     __metadata("design:type", Number)
 ], ProductionPlan.prototype, "quantity", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'unit', type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "unit", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'planned_date', type: 'datetime', nullable: false }),
     (0, typeorm_1.Index)(),
@@ -77,17 +95,17 @@ __decorate([
     __metadata("design:type", Number)
 ], ProductionPlan.prototype, "finishedQuantity", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'plan_status', type: 'varchar', length: 50, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'is_key_material', type: 'varchar', length: 10, nullable: true }),
     __metadata("design:type", String)
-], ProductionPlan.prototype, "planStatus", void 0);
+], ProductionPlan.prototype, "isKeyMaterial", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'material_code', type: 'varchar', length: 100, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'production_line', type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", String)
-], ProductionPlan.prototype, "materialCode", void 0);
+], ProductionPlan.prototype, "productionLine", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'material_desc', type: 'varchar', length: 255, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'remarks', type: 'varchar', length: 255, nullable: true }),
     __metadata("design:type", String)
-], ProductionPlan.prototype, "materialDesc", void 0);
+], ProductionPlan.prototype, "remarks", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'create_time' }),
     __metadata("design:type", Date)

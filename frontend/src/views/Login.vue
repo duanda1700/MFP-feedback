@@ -293,7 +293,7 @@ const handleLogin = async () => {
           localStorage.removeItem('rememberedUsername');
         }
         ElMessage.success('登录成功');
-        router.push('/dashboard');
+        router.push('/app/dashboard');
       } catch (error: any) {
         ElMessage.error(error.message || '登录失败');
       } finally {
@@ -320,7 +320,7 @@ const handleCaptchaLogin = async () => {
           localStorage.removeItem('rememberedUsername');
         }
         ElMessage.success('登录成功');
-        router.push('/dashboard');
+        router.push('/app/dashboard');
       } catch (error: any) {
         ElMessage.error(error.message || '登录失败');
       } finally {

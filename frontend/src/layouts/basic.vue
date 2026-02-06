@@ -1,7 +1,7 @@
 <template>
   <div class="basic-layout">
     <!-- 侧边栏 -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
       <div class="sidebar-header">
         <h2>MFP-Feedback</h2>
       </div>
@@ -10,44 +10,45 @@
           :default-active="activeMenu"
           class="el-menu-vertical-demo"
           @select="handleMenuSelect"
+          :collapse="sidebarCollapsed"
         >
-          <el-menu-item index="/dashboard">
+          <el-menu-item index="/app/dashboard">
             <template #title>
               <i class="el-icon-s-home"></i>
               <span>仪表盘</span>
             </template>
           </el-menu-item>
-          <el-menu-item index="/purchase-order">
+          <el-menu-item index="/app/purchase-order">
             <template #title>
               <i class="el-icon-document"></i>
               <span>采购订单外发</span>
             </template>
           </el-menu-item>
-          <el-menu-item index="/production-plan">
+          <el-menu-item index="/app/production-plan">
             <template #title>
               <i class="el-icon-s-grid"></i>
               <span>生产计划分解</span>
             </template>
           </el-menu-item>
-          <el-menu-item index="/progress-feedback">
+          <el-menu-item index="/app/progress-feedback">
             <template #title>
               <i class="el-icon-time"></i>
-              <span>进度反馈</span>
+              <span>计划进度反馈</span>
             </template>
           </el-menu-item>
-          <el-menu-item index="/todo">
+          <el-menu-item index="/app/todo">
             <template #title>
               <i class="el-icon-check"></i>
               <span>待办事项</span>
             </template>
           </el-menu-item>
-          <el-menu-item index="/permission">
+          <el-menu-item index="/app/permission">
             <template #title>
               <i class="el-icon-lock"></i>
               <span>权限管理</span>
             </template>
           </el-menu-item>
-          <el-menu-item index="/monitor">
+          <el-menu-item index="/app/monitor">
             <template #title>
               <i class="el-icon-data-line"></i>
               <span>数据监控</span>
@@ -124,8 +125,29 @@ const toggleSidebar = () => {
 };
 
 // 菜单选择
-const handleMenuSelect = (key: string) => {
-  router.push(key);
+const handleMenuSelect = (key: string, keyPath: string[]) => {
+  console.log('Menu selected:', key, keyPath);
+  try {
+    // 确保key是有效的路由路径
+    if (!key) {
+      console.error('Invalid navigation key:', key);
+      ElMessage.error('无效的导航路径');
+      return;
+    }
+    
+    console.log('Attempting to navigate to:', key);
+    
+    // 使用router.push的promise形式，以便更好地处理错误
+    router.push(key).then(() => {
+      console.log('Navigation successful to:', key);
+    }).catch((error) => {
+      console.error('Navigation error:', error);
+      ElMessage.error('导航失败: ' + (error.message || '未知错误'));
+    });
+  } catch (error) {
+    console.error('Navigation error:', error);
+    ElMessage.error('导航失败: ' + (error.message || '未知错误'));
+  }
 };
 
 // 个人中心

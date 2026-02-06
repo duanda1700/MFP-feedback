@@ -4,7 +4,7 @@ import { AuthLayout, BasicLayout } from './layouts';
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/auth/login'
   },
   {
     path: '/auth',
@@ -19,7 +19,7 @@ const routes = [
     ]
   },
   {
-    path: '/',
+    path: '/app',
     component: BasicLayout,
     meta: { requiresAuth: true },
     children: [
@@ -45,7 +45,7 @@ const routes = [
         path: 'progress-feedback',
         name: 'ProgressFeedback',
         component: () => import('./views/ProgressFeedback.vue'),
-        meta: { title: '进度反馈' }
+        meta: { title: '计划进度反馈' }
       },
       {
         path: 'todo',
@@ -98,8 +98,8 @@ router.beforeEach((to, from, next) => {
     // 未登录，跳转到登录页
     next('/auth/login');
   } else if (isLoggedIn && to.path === '/auth/login') {
-    // 已登录，从登录页跳转到仪表盘
-    next('/dashboard');
+      // 已登录，从登录页跳转到仪表盘
+      next('/app/dashboard');
   } else {
     next();
   }

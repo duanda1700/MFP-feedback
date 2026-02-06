@@ -67,7 +67,7 @@ service.interceptors.response.use(
       try {
         // 尝试刷新token
         const refreshResponse = await axios.post('/api/auth/refresh');
-        const newToken = refreshResponse.data.access_token;
+        const newToken = refreshResponse.data.access_token || refreshResponse.data.token;
         
         // 更新store中的token
         userStore.token = newToken;
@@ -81,6 +81,7 @@ service.interceptors.response.use(
         error.config.headers.Authorization = `Bearer ${newToken}`;
         return service(error.config);
       } catch (refreshError) {
+        console.error('Refresh token error:', refreshError);
         // 刷新token失败，跳转到登录页
         userStore.logout();
         window.location.href = '/auth/login';

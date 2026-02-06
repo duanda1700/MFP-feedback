@@ -53,4 +53,22 @@ export class OrderController {
   async deleteOrder(@Param('id') id: number) {
     return this.orderService.deleteOrder(id);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('wide-table/:id')
+  async getWideTableData(@Param('id') id: number) {
+    return this.orderService.getWideTableData(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('update-plan-status')
+  async updatePlanStatus(@Body() body: { materialCode: string; planStatus: string }) {
+    return this.orderService.updatePlanStatus(body.materialCode, body.planStatus);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('update-remarks')
+  async updateRemarks(@Body() body: { materialCode: string; remarks: string }) {
+    return this.orderService.updateRemarks(body.materialCode, body.remarks);
+  }
 }

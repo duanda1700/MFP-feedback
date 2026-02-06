@@ -27,4 +27,25 @@ export declare class OrderController {
     createOrder(orderData: any): Promise<import("../database/entities/purchase-order.entity").PurchaseOrder[]>;
     updateOrder(id: number, orderData: any): Promise<import("../database/entities/purchase-order.entity").PurchaseOrder>;
     deleteOrder(id: number): Promise<import("../database/entities/purchase-order.entity").PurchaseOrder>;
+    getWideTableData(id: number): Promise<{
+        data: {
+            materialCode: string;
+            materialDesc: string;
+            quantity: number;
+            drawingNo: string;
+            purchasePlanDate: Date;
+            productionPlanDate: Date;
+            planStatus: string;
+            remarks: string;
+        }[];
+        total: number;
+    }>;
+    updatePlanStatus(body: {
+        materialCode: string;
+        planStatus: string;
+    }): Promise<import("../database/entities/production-plan.entity").ProductionPlan>;
+    updateRemarks(body: {
+        materialCode: string;
+        remarks: string;
+    }): Promise<import("../database/entities/production-plan.entity").ProductionPlan>;
 }
