@@ -92,7 +92,6 @@
         <template #header>
           <div class="recent-header">
             <span>最近预警</span>
-            <el-link type="primary" :href="'/monitor'">查看全部</el-link>
           </div>
         </template>
         <el-table :data="recentAlerts" style="width: 100%">
@@ -139,7 +138,7 @@
 import { ref, onMounted, watch } from 'vue';
 import * as echarts from 'echarts';
 import { useUserStore } from '../store/user';
-import { monitorApi, todoApi } from '../api';
+import { todoApi } from '../api';
 
 const userStore = useUserStore();
 const orderStatusChartRef = ref<HTMLElement>();
@@ -275,12 +274,6 @@ const loadData = async () => {
     // 加载待办任务数量
     const todoResponse = await todoApi.getCount();
     todoCount.value = todoResponse.count || 0;
-    
-    // 加载仪表盘数据
-    const dashboardResponse = await monitorApi.getDashboard();
-    if (dashboardResponse) {
-      orderStats.value = dashboardResponse.orderStats || orderStats.value;
-    }
   } catch (error) {
     console.error('Load dashboard data error:', error);
   }

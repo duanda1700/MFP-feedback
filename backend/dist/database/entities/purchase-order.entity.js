@@ -33,6 +33,7 @@ let PurchaseOrder = class PurchaseOrder {
     setCount;
     supplierCode;
     supplierName;
+    supplierId;
     purchaseManager;
     createTime;
     updateTime;
@@ -125,6 +126,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'supplier_name', type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", String)
 ], PurchaseOrder.prototype, "supplierName", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_id', type: 'int', nullable: true }),
+    __metadata("design:type", Number)
+], PurchaseOrder.prototype, "supplierId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'purchase_manager', type: 'varchar', length: 20, nullable: true }),
     __metadata("design:type", String)

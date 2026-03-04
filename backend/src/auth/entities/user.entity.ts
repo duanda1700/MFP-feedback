@@ -20,6 +20,9 @@ export class User {
   @Column({ name: 'department', type: 'varchar', length: 100, nullable: true })
   department: string;
 
+  @Column({ name: 'supplier_id', type: 'int', nullable: true })
+  supplierId: number;
+
   @Column({ name: 'is_active', type: 'tinyint', default: 1, nullable: false })
   isActive: boolean;
 

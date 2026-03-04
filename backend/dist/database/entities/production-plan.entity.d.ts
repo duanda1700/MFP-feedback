@@ -3,6 +3,7 @@ export declare class ProductionPlan {
     purchaseDetailsId: number;
     planName: string;
     planType: string;
+    planClass: string;
     planDept: string;
     planMaker: string;
     planDate: Date;

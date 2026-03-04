@@ -25,9 +25,9 @@ export class OrderController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Post('issue-task')
-  async issueTask(@Body() body: { orderId: number; supplierId: number }) {
-    return this.orderService.issueTask(body.orderId, body.supplierId);
+  @Post('mark-compliance-material')
+  async markComplianceMaterial(@Body() body: { orderDetailId: string; isComplianceMaterial: boolean }) {
+    return this.orderService.markComplianceMaterial(body.orderDetailId, body.isComplianceMaterial);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -76,5 +76,37 @@ export class OrderController {
   @Put('update-status/:id')
   async updateOrderStatus(@Param('id') id: number, @Body() body: { status: string }) {
     return this.orderService.updateOrderStatus(id, body.status);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('suppliers')
+  async getSuppliers() {
+    return this.orderService.getSupplierList();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('generate-template/:orderId')
+  async generateTemplate(@Param('orderId') orderId: number) {
+    return this.orderService.generatePlanFeedbackTemplate(orderId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('issue')
+  async issueOrder(@Body() body: {
+    orderId: number;
+    supplierId: number;
+    issueDesc: string;
+    planCompleteTime: Date;
+    detailMarks: any[];
+    planFeedbackTemplate: any[];
+  }) {
+    return this.orderService.issueOrder(
+      body.orderId,
+      body.supplierId,
+      body.issueDesc,
+      body.planCompleteTime,
+      body.detailMarks,
+      body.planFeedbackTemplate
+    );
   }
 }

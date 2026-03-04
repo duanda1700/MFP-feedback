@@ -31,7 +31,7 @@ exports.AppDataSource = new typeorm_1.DataSource({
     ],
     synchronize: false,
     logging: true,
-    migrations: [],
+    migrations: ['src/database/migrations/*.ts'],
     poolSize: 10,
     connectTimeout: 20000,
 });

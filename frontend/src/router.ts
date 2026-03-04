@@ -54,6 +54,12 @@ const routes = [
         meta: { title: '计划进度反馈' }
       },
       {
+        path: 'production-plan-confirmation',
+        name: 'ProductionPlanConfirmation',
+        component: () => import('./views/ProductionPlanConfirmation.vue'),
+        meta: { title: '生产计划确认' }
+      },
+      {
         path: 'todo',
         name: 'Todo',
         component: () => import('./views/Todo.vue'),
@@ -66,10 +72,10 @@ const routes = [
         meta: { title: '权限管理' }
       },
       {
-        path: 'monitor',
-        name: 'Monitor',
-        component: () => import('./views/Monitor.vue'),
-        meta: { title: '数据监控' }
+        path: 'purchase-order/issue/:orderId',
+        name: 'PurchaseOrderIssue',
+        component: () => import('./views/PurchaseOrderIssue.vue'),
+        meta: { title: '采购订单下发' }
       }
     ]
   },

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { useUserStore } from '../store/user';
 
 // 创建axios实例
 const service = axios.create({
@@ -18,9 +17,9 @@ let retryQueue: Array<(token: string) => void> = [];
 // 请求拦截器
 service.interceptors.request.use(
   (config) => {
-    const userStore = useUserStore();
-    if (userStore.token) {
-      config.headers.Authorization = `Bearer ${userStore.token}`;
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -33,6 +32,7 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response) => {
+    console.log('Response received:', response);
     const { data } = response;
     
     // 检查响应状态
@@ -49,9 +49,7 @@ service.interceptors.response.use(
     
     // 处理401错误
     if (error.response && error.response.status === 401) {
-      const userStore = useUserStore();
-      
-      // 如果已经在刷新token，将请求加入队列
+      // 标记是否正在刷新token
       if (isRefreshing) {
         return new Promise((resolve) => {
           retryQueue.push((token) => {
@@ -66,11 +64,10 @@ service.interceptors.response.use(
       
       try {
         // 尝试刷新token
-        const refreshResponse = await axios.post('/api/auth/refresh');
-        const newToken = refreshResponse.data.access_token || refreshResponse.data.token;
+        const refreshResponse = await service.post('/auth/refresh', {});
+        const newToken = refreshResponse.access_token || refreshResponse.token;
         
-        // 更新store中的token
-        userStore.token = newToken;
+        // 更新localStorage中的token
         localStorage.setItem('token', newToken);
         
         // 重试队列中的请求
@@ -83,7 +80,10 @@ service.interceptors.response.use(
       } catch (refreshError) {
         console.error('Refresh token error:', refreshError);
         // 刷新token失败，跳转到登录页
-        userStore.logout();
+        localStorage.removeItem('token');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('permissions');
+        localStorage.removeItem('roles');
         window.location.href = '/auth/login';
         return Promise.reject(refreshError);
       } finally {

@@ -16,10 +16,10 @@ export declare class OrderController {
         orderDetailId: string;
         isKeyMaterial: boolean;
     }): Promise<import("../database/entities/purchase-details.entity").PurchaseDetails>;
-    issueTask(body: {
-        orderId: number;
-        supplierId: number;
-    }): Promise<import("../database/entities/purchase-order.entity").PurchaseOrder>;
+    markComplianceMaterial(body: {
+        orderDetailId: string;
+        isComplianceMaterial: boolean;
+    }): Promise<import("../database/entities/purchase-details.entity").PurchaseDetails>;
     syncErpData(): Promise<{
         message: string;
         synchronizedCount: number;
@@ -51,4 +51,31 @@ export declare class OrderController {
     updateOrderStatus(id: number, body: {
         status: string;
     }): Promise<import("../database/entities/purchase-order.entity").PurchaseOrder>;
+    getSuppliers(): Promise<import("../database/entities/supplier.entity").Supplier[]>;
+    generateTemplate(orderId: number): Promise<{
+        materialCode: string;
+        materialDesc: string;
+        quantity: number;
+        planDate: Date;
+        isKeyMaterial: boolean;
+        isComplianceMaterial: boolean;
+        planStatus: string;
+        supplierCode: string;
+        supplierName: string;
+        orderNo: string;
+        remarks: string;
+    }[]>;
+    issueOrder(body: {
+        orderId: number;
+        supplierId: number;
+        issueDesc: string;
+        planCompleteTime: Date;
+        detailMarks: any[];
+        planFeedbackTemplate: any[];
+    }): Promise<{
+        success: boolean;
+        message: string;
+        orderId: number;
+        taskId: number;
+    }>;
 }

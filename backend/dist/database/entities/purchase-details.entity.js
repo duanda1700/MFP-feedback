@@ -34,6 +34,7 @@ let PurchaseDetails = class PurchaseDetails {
     createTime;
     updateTime;
     isKeyMaterial;
+    isComplianceMaterial;
 };
 exports.PurchaseDetails = PurchaseDetails;
 __decorate([
@@ -128,6 +129,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'is_key_material', type: 'varchar', length: 2, nullable: true }),
     __metadata("design:type", String)
 ], PurchaseDetails.prototype, "isKeyMaterial", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'is_compliance_material', type: 'varchar', length: 2, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseDetails.prototype, "isComplianceMaterial", void 0);
 exports.PurchaseDetails = PurchaseDetails = __decorate([
     (0, typeorm_1.Entity)('PURCHASE_DETAILS')
 ], PurchaseDetails);

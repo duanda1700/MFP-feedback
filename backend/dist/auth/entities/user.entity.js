@@ -18,6 +18,7 @@ let User = class User {
     name;
     role;
     department;
+    supplierId;
     isActive;
     createTime;
     updateTime;
@@ -47,6 +48,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'department', type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "department", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'supplier_id', type: 'int', nullable: true }),
+    __metadata("design:type", Number)
+], User.prototype, "supplierId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'is_active', type: 'tinyint', default: 1, nullable: false }),
     __metadata("design:type", Boolean)

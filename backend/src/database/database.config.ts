@@ -7,6 +7,9 @@ import { RolePermission } from './entities/role-permission.entity';
 import { Alert } from './entities/alert.entity';
 import { ChangeRecord } from './entities/change-record.entity';
 import { Notification } from './entities/notification.entity';
+import { PurchaseOrderTask } from './entities/purchase-order-task.entity';
+import { Supplier } from './entities/supplier.entity';
+import { OperationLog } from './entities/operation-log.entity';
 import { User } from '../auth/entities/user.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -25,6 +28,9 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Alert,
     ChangeRecord,
     Notification,
+    PurchaseOrderTask,
+    Supplier,
+    OperationLog,
     User,
   ],
   synchronize: false,

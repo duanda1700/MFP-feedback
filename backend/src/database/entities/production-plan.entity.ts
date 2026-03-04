@@ -16,6 +16,10 @@ export class ProductionPlan {
   @Column({ name: 'plan_type', type: 'varchar', length: 100, nullable: false })
   planType: string;
 
+  @Column({ name: 'plan_class', type: 'varchar', length: 50, nullable: true })
+  @Index()
+  planClass: string;
+
   @Column({ name: 'plan_dept', type: 'varchar', length: 100, nullable: false })
   planDept: string;
 

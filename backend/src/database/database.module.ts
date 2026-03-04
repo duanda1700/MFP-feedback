@@ -8,6 +8,9 @@ import { RolePermission } from './entities/role-permission.entity';
 import { Alert } from './entities/alert.entity';
 import { ChangeRecord } from './entities/change-record.entity';
 import { Notification } from './entities/notification.entity';
+import { PurchaseOrderTask } from './entities/purchase-order-task.entity';
+import { Supplier } from './entities/supplier.entity';
+import { OperationLog } from './entities/operation-log.entity';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { Notification } from './entities/notification.entity';
       Alert,
       ChangeRecord,
       Notification,
+      PurchaseOrderTask,
+      Supplier,
+      OperationLog,
     ]),
   ],
   exports: [
@@ -32,6 +38,9 @@ import { Notification } from './entities/notification.entity';
       Alert,
       ChangeRecord,
       Notification,
+      PurchaseOrderTask,
+      Supplier,
+      OperationLog,
     ]),
   ],
 })

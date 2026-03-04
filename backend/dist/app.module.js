@@ -24,6 +24,7 @@ const analytics_module_1 = require("./analytics/analytics.module");
 const integration_module_1 = require("./integration/integration.module");
 const task_module_1 = require("./task/task.module");
 const notification_module_1 = require("./notification/notification.module");
+const supplier_module_1 = require("./supplier/supplier.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -43,6 +44,7 @@ exports.AppModule = AppModule = __decorate([
             integration_module_1.IntegrationModule,
             task_module_1.TaskModule,
             notification_module_1.NotificationModule,
+            supplier_module_1.SupplierModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

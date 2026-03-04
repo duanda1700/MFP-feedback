@@ -16,6 +16,7 @@ let ProductionPlan = class ProductionPlan {
     purchaseDetailsId;
     planName;
     planType;
+    planClass;
     planDept;
     planMaker;
     planDate;
@@ -51,6 +52,11 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'plan_type', type: 'varchar', length: 100, nullable: false }),
     __metadata("design:type", String)
 ], ProductionPlan.prototype, "planType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'plan_class', type: 'varchar', length: 50, nullable: true }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "planClass", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'plan_dept', type: 'varchar', length: 100, nullable: false }),
     __metadata("design:type", String)

@@ -1,7 +1,9 @@
 import { AuthService } from './auth.service';
+import { JwtService } from '@nestjs/jwt';
 export declare class AuthController {
     private authService;
-    constructor(authService: AuthService);
+    private jwtService;
+    constructor(authService: AuthService, jwtService: JwtService);
     login(loginDto: {
         username: string;
         password: string;
@@ -13,6 +15,7 @@ export declare class AuthController {
             name: any;
             role: any;
             department: any;
+            supplierId: any;
         };
     } | {
         message: string;
@@ -27,6 +30,8 @@ export declare class AuthController {
     getProfile(req: any): Promise<any>;
     refreshToken(req: any): Promise<{
         access_token: string;
+    } | {
+        message: string;
     }>;
     logout(): Promise<{
         message: string;

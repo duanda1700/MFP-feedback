@@ -14,12 +14,15 @@ const order_controller_1 = require("./order.controller");
 const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
 const purchase_details_entity_1 = require("../database/entities/purchase-details.entity");
 const production_plan_entity_1 = require("../database/entities/production-plan.entity");
+const purchase_order_task_entity_1 = require("../database/entities/purchase-order-task.entity");
+const supplier_entity_1 = require("../database/entities/supplier.entity");
+const operation_log_entity_1 = require("../database/entities/operation-log.entity");
 let OrderModule = class OrderModule {
 };
 exports.OrderModule = OrderModule;
 exports.OrderModule = OrderModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([purchase_order_entity_1.PurchaseOrder, purchase_details_entity_1.PurchaseDetails, production_plan_entity_1.ProductionPlan])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([purchase_order_entity_1.PurchaseOrder, purchase_details_entity_1.PurchaseDetails, production_plan_entity_1.ProductionPlan, purchase_order_task_entity_1.PurchaseOrderTask, supplier_entity_1.Supplier, operation_log_entity_1.OperationLog])],
         providers: [order_service_1.OrderService],
         controllers: [order_controller_1.OrderController],
         exports: [order_service_1.OrderService],

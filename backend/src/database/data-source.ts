@@ -29,7 +29,7 @@ export const AppDataSource = new DataSource({
   ],
   synchronize: false,
   logging: true,
-  migrations: [],
+  migrations: ['src/database/migrations/*.ts'],
   poolSize: 10,
   connectTimeout: 20000,
 });

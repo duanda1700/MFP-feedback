@@ -12,54 +12,76 @@
           @select="handleMenuSelect"
           :collapse="sidebarCollapsed"
         >
-          <el-menu-item index="/app/dashboard">
+          <el-sub-menu index="dashboard">
             <template #title>
               <i class="el-icon-s-home"></i>
               <span>仪表盘</span>
             </template>
-          </el-menu-item>
-          <el-menu-item index="/app/purchase-order">
+            <el-menu-item index="/app/dashboard">
+              <template #title>
+                <span>仪表盘</span>
+              </template>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="purchase">
             <template #title>
-              <i class="el-icon-document"></i>
-              <span>采购订单外发</span>
+              <i class="el-icon-s-shop"></i>
+              <span>采购管理</span>
             </template>
-          </el-menu-item>
-          <el-menu-item index="/app/purchase-track">
-            <template #title>
-              <i class="el-icon-location"></i>
-              <span>采购订单跟踪</span>
-            </template>
-          </el-menu-item>
-          <el-menu-item index="/app/production-plan">
+            <el-menu-item index="/app/purchase-order">
+              <template #title>
+                <span>采购订单外发</span>
+              </template>
+            </el-menu-item>
+            <el-menu-item index="/app/purchase-track">
+              <template #title>
+                <span>采购订单跟踪</span>
+              </template>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="production">
             <template #title>
               <i class="el-icon-s-grid"></i>
-              <span>生产计划分解</span>
+              <span>生产协同</span>
             </template>
-          </el-menu-item>
-          <el-menu-item index="/app/progress-feedback">
-            <template #title>
-              <i class="el-icon-time"></i>
-              <span>计划进度反馈</span>
-            </template>
-          </el-menu-item>
-          <el-menu-item index="/app/todo">
+            <el-menu-item index="/app/production-plan">
+              <template #title>
+                <span>生产计划分解</span>
+              </template>
+            </el-menu-item>
+            <el-menu-item index="/app/production-plan-confirmation">
+              <template #title>
+                <span>生产计划确认</span>
+              </template>
+            </el-menu-item>
+            <el-menu-item index="/app/progress-feedback">
+              <template #title>
+                <span>计划进度反馈</span>
+              </template>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="todo">
             <template #title>
               <i class="el-icon-check"></i>
               <span>待办事项</span>
             </template>
-          </el-menu-item>
-          <el-menu-item index="/app/permission">
+            <el-menu-item index="/app/todo">
+              <template #title>
+                <span>待办事项</span>
+              </template>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="permission">
             <template #title>
               <i class="el-icon-lock"></i>
               <span>权限管理</span>
             </template>
-          </el-menu-item>
-          <el-menu-item index="/app/monitor">
-            <template #title>
-              <i class="el-icon-data-line"></i>
-              <span>数据监控</span>
-            </template>
-          </el-menu-item>
+            <el-menu-item index="/app/permission">
+              <template #title>
+                <span>权限管理</span>
+              </template>
+            </el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </nav>
     </aside>

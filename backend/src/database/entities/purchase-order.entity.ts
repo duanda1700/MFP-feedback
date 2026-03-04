@@ -69,6 +69,9 @@ export class PurchaseOrder {
   @Column({ name: 'supplier_name', type: 'varchar', length: 100, nullable: true })
   supplierName: string;
 
+  @Column({ name: 'supplier_id', type: 'int', nullable: true })
+  supplierId: number;
+
   @Column({ name: 'purchase_manager', type: 'varchar', length: 20, nullable: true })
   purchaseManager: string;
 

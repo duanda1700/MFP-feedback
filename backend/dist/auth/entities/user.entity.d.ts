@@ -5,6 +5,7 @@ export declare class User {
     name: string;
     role: string;
     department: string;
+    supplierId: number;
     isActive: boolean;
     createTime: Date;
     updateTime: Date;

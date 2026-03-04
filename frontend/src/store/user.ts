@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import request from '../api/request';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -20,13 +20,13 @@ export const useUserStore = defineStore('user', {
     async login(username: string, password: string) {
       this.loading = true;
       try {
-        const response = await axios.post('/api/auth/login', {
+        const response = await request.post('/auth/login', {
           username,
           password
         });
         
         // 处理后端返回的数据结构
-        const { access_token, user } = response.data;
+        const { access_token, user } = response;
         
         // 确保数据结构正确
         const token = access_token;
@@ -54,7 +54,7 @@ export const useUserStore = defineStore('user', {
     
     async logout() {
       try {
-        await axios.post('/api/auth/logout');
+        await request.post('/auth/logout');
       } catch (error) {
         console.error('Logout error:', error);
       } finally {
@@ -72,8 +72,9 @@ export const useUserStore = defineStore('user', {
     
     async refreshToken() {
       try {
-        const response = await axios.post('/api/auth/refresh');
-        const { token } = response.data;
+        const response = await request.post('/auth/refresh');
+        const { access_token } = response;
+        const token = access_token;
         this.token = token;
         localStorage.setItem('token', token);
         return token;
@@ -84,8 +85,10 @@ export const useUserStore = defineStore('user', {
     
     async getUserInfo() {
       try {
-        const response = await axios.get('/api/auth/user');
-        const { userInfo, permissions, roles } = response.data;
+        const response = await request.get('/auth/profile');
+        const userInfo = response;
+        const permissions = ['all'];
+        const roles = [userInfo.role];
         
         this.userInfo = userInfo;
         this.permissions = permissions;
@@ -95,7 +98,7 @@ export const useUserStore = defineStore('user', {
         localStorage.setItem('permissions', JSON.stringify(permissions));
         localStorage.setItem('roles', JSON.stringify(roles));
         
-        return response.data;
+        return { userInfo, permissions, roles };
       } catch (error) {
         throw error;
       }

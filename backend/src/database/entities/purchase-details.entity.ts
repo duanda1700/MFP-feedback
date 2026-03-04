@@ -72,4 +72,7 @@ export class PurchaseDetails {
 
   @Column({ name: 'is_key_material', type: 'varchar', length: 2, nullable: true })
   isKeyMaterial: string;
+
+  @Column({ name: 'is_compliance_material', type: 'varchar', length: 2, nullable: true })
+  isComplianceMaterial: string;
 }

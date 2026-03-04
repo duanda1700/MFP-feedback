@@ -16,10 +16,13 @@ exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const passport_1 = require("@nestjs/passport");
+const jwt_1 = require("@nestjs/jwt");
 let AuthController = class AuthController {
     authService;
-    constructor(authService) {
+    jwtService;
+    constructor(authService, jwtService) {
         this.authService = authService;
+        this.jwtService = jwtService;
     }
     async login(loginDto) {
         const user = await this.authService.validateUser(loginDto.username, loginDto.password);
@@ -35,7 +38,22 @@ let AuthController = class AuthController {
         return req.user;
     }
     async refreshToken(req) {
-        return this.authService.refreshToken(req.user);
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return { message: 'No token provided' };
+        }
+        const token = authHeader.replace('Bearer ', '');
+        try {
+            const decoded = this.jwtService.verify(token, { secret: 'your-secret-key' });
+            const user = await this.authService.getUserById(decoded.sub);
+            if (!user) {
+                return { message: 'User not found' };
+            }
+            return this.authService.refreshToken(user);
+        }
+        catch (error) {
+            return { message: 'Invalid token' };
+        }
     }
     async logout() {
         return { message: 'Logout successful' };
@@ -65,7 +83,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getProfile", null);
 __decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('refresh'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -81,6 +98,6 @@ __decorate([
 ], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('api/auth'),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    __metadata("design:paramtypes", [auth_service_1.AuthService, jwt_1.JwtService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

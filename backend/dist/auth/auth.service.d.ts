@@ -14,6 +14,7 @@ export declare class AuthService {
             name: any;
             role: any;
             department: any;
+            supplierId: any;
         };
     }>;
     register(userData: any): Promise<User[]>;

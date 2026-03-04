@@ -38,9 +38,8 @@
           
           <el-form-item label="订单状态">
             <el-select v-model="searchForm.orderStatus" placeholder="请选择订单状态">
-              <el-option label="待处理" value="待处理" />
-              <el-option label="处理中" value="处理中" />
-              <el-option label="已完成" value="已完成" />
+              <el-option label="待下发" value="待下发" />
+              <el-option label="有变更" value="有变更" />
             </el-select>
           </el-form-item>
           
@@ -197,9 +196,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Refresh, View, Close } from '@element-plus/icons-vue';
 import { purchaseOrderApi, supplierApi } from '../api';
+
+// 路由
+const router = useRouter();
 
 // 搜索表单
 const searchForm = reactive({
@@ -268,6 +271,10 @@ const getStatusType = (status: string) => {
       return 'primary';
     case '已完成':
       return 'success';
+    case '待下发':
+      return 'warning';
+    case '有变更':
+      return 'danger';
     default:
       return 'info';
   }
@@ -304,8 +311,11 @@ const handleRefresh = async () => {
       page: pagination.currentPage,
       pageSize: pagination.pageSize
     });
-    orderList.value = response.data || [];
-    pagination.total = response.total || 0;
+    // 过滤订单状态为"待下发"和"有变更"的行
+    orderList.value = (response.data || []).filter((order: any) => {
+      return order.orderStatus === '待下发' || order.orderStatus === '有变更';
+    });
+    pagination.total = orderList.value.length;
     ElMessage.success('列表刷新成功');
   } catch (error) {
     console.error('Refresh order list error:', error);
@@ -322,8 +332,11 @@ const handleSearch = async () => {
       page: pagination.currentPage,
       pageSize: pagination.pageSize
     });
-    orderList.value = response.data || [];
-    pagination.total = response.total || 0;
+    // 过滤订单状态为"待下发"和"有变更"的行
+    orderList.value = (response.data || []).filter((order: any) => {
+      return order.orderStatus === '待下发' || order.orderStatus === '有变更';
+    });
+    pagination.total = orderList.value.length;
     ElMessage.success('搜索成功');
   } catch (error) {
     console.error('Search purchase order error:', error);
@@ -400,9 +413,8 @@ const handleBatchIssueTask = () => {
 
 // 单个下发任务
 const handleSingleIssueTask = (row: any) => {
-  selectedRows.value = [row];
-  issueTaskForm.supplierId = row.supplierId;
-  issueTaskDialogVisible.value = true;
+  // 跳转到订单下发编辑页面
+  router.push(`/app/purchase-order/issue/${row.id}`);
 };
 
 // 确认下发任务

@@ -20,6 +20,7 @@ export declare class PurchaseOrder {
     setCount: string;
     supplierCode: string;
     supplierName: string;
+    supplierId: number;
     purchaseManager: string;
     createTime: Date;
     updateTime: Date;

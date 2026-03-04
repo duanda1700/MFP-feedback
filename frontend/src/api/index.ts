@@ -13,8 +13,12 @@ export const purchaseOrderApi = {
   getList: (params: any) => request.get('/order/list', { params }),
   getDetail: (id: number) => request.get(`/order/detail/${id}`),
   getWideTableData: (id: number) => request.get(`/order/wide-table/${id}`),
+  getSuppliers: () => request.get('/order/suppliers'),
+  generateTemplate: (orderId: number) => request.get(`/order/generate-template/${orderId}`),
   markKeyMaterial: (data: { orderDetailId: string; isKeyMaterial: boolean }) => request.post('/order/mark-key-material', data),
+  markComplianceMaterial: (data: { orderDetailId: string; isComplianceMaterial: boolean }) => request.post('/order/mark-compliance-material', data),
   issueTask: (data: { orderId: number; supplierId: number }) => request.post('/order/issue-task', data),
+  issueOrder: (data: any) => request.post('/order/issue', data),
   updateStatus: (id: number, status: string) => request.put(`/order/update-status/${id}`, { status }),
   updatePlanStatus: (data: { materialCode: string; planStatus: string }) => request.put('/order/update-plan-status', data),
   updateRemarks: (data: { materialCode: string; remarks: string }) => request.put('/order/update-remarks', data)
@@ -57,16 +61,6 @@ export const permissionApi = {
   assignPermission: (data: { roleId: string; permissions: string[] }) => request.post('/permission/assign', data)
 };
 
-// 数据监控相关API
-export const monitorApi = {
-  getDashboard: () => request.get('/monitor/dashboard'),
-  getOrderStats: (params: any) => request.get('/monitor/order-stats', { params }),
-  getDeliveryStats: (params: any) => request.get('/monitor/delivery-stats', { params }),
-  getAlertStats: (params: any) => request.get('/monitor/alert-stats', { params }),
-  getAlerts: (params: any) => request.get('/monitor/alerts', { params }),
-  handleAlert: (id: string, data: any) => request.put(`/monitor/alerts/${id}/handle`, data)
-};
-
 // 通知相关API
 export const notificationApi = {
   getList: (params: any) => request.get('/notification/list', { params }),
@@ -74,3 +68,17 @@ export const notificationApi = {
   markAsRead: (id: string) => request.put(`/notification/mark-as-read/${id}`),
   markAllAsRead: () => request.put('/notification/mark-all-as-read')
 };
+
+// 供应商相关API
+export const supplierApi = {
+  getOrders: () => request.get('/supplier/orders'),
+  getOrderDetails: (orderId: string) => request.get(`/supplier/orders/${orderId}`),
+  getOrderPlans: (orderId: string, params: any) => request.get('/supplier/production-plans', { params }),
+  updatePlanStatus: (planId: string, status: string) => request.put(`/supplier/production-plans/${planId}/status`, { status })
+};
+
+// 导出单独的函数以便在组件中直接使用
+export const getSupplierOrders = () => supplierApi.getOrders();
+export const getSupplierOrderDetails = (orderId: string) => supplierApi.getOrderDetails(orderId);
+export const getSupplierOrderPlans = (orderId: string, params: any) => supplierApi.getOrderPlans(orderId, params);
+export const updatePlanStatus = (planId: string, status: string) => supplierApi.updatePlanStatus(planId, status);

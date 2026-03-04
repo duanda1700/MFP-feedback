@@ -72,7 +72,7 @@ let AuthService = class AuthService {
         return null;
     }
     async login(user) {
-        const payload = { username: user.username, sub: user.id, role: user.role };
+        const payload = { username: user.username, sub: user.id, role: user.role, supplierId: user.supplierId };
         return {
             access_token: this.jwtService.sign(payload),
             user: {
@@ -81,6 +81,7 @@ let AuthService = class AuthService {
                 name: user.name,
                 role: user.role,
                 department: user.department,
+                supplierId: user.supplierId,
             },
         };
     }
@@ -100,7 +101,7 @@ let AuthService = class AuthService {
         return this.usersRepository.findOne({ where: { id } });
     }
     async refreshToken(user) {
-        const payload = { username: user.username, sub: user.id, role: user.role };
+        const payload = { username: user.username, sub: user.id, role: user.role, supplierId: user.supplierId };
         return {
             access_token: this.jwtService.sign(payload),
         };

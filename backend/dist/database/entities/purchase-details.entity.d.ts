@@ -21,4 +21,5 @@ export declare class PurchaseDetails {
     createTime: Date;
     updateTime: Date;
     isKeyMaterial: string;
+    isComplianceMaterial: string;
 }

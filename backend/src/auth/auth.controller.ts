@@ -1,10 +1,11 @@
 import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller('api/auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private jwtService: JwtService) {}
 
   @Post('login')
   async login(@Body() loginDto: { username: string; password: string }) {
@@ -26,10 +27,26 @@ export class AuthController {
     return req.user;
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Post('refresh')
   async refreshToken(@Request() req) {
-    return this.authService.refreshToken(req.user);
+    // 从请求头中获取 token
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return { message: 'No token provided' };
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    try {
+      // 验证 token 是否有效
+      const decoded = this.jwtService.verify(token, { secret: 'your-secret-key' });
+      const user = await this.authService.getUserById(decoded.sub);
+      if (!user) {
+        return { message: 'User not found' };
+      }
+      return this.authService.refreshToken(user);
+    } catch (error) {
+      return { message: 'Invalid token' };
+    }
   }
 
   @UseGuards(AuthGuard('jwt'))

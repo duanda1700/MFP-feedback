@@ -19,14 +19,23 @@ const typeorm_2 = require("typeorm");
 const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
 const purchase_details_entity_1 = require("../database/entities/purchase-details.entity");
 const production_plan_entity_1 = require("../database/entities/production-plan.entity");
+const purchase_order_task_entity_1 = require("../database/entities/purchase-order-task.entity");
+const supplier_entity_1 = require("../database/entities/supplier.entity");
+const operation_log_entity_1 = require("../database/entities/operation-log.entity");
 let OrderService = class OrderService {
     orderRepository;
     orderDetailsRepository;
     productionPlanRepository;
-    constructor(orderRepository, orderDetailsRepository, productionPlanRepository) {
+    orderTaskRepository;
+    supplierRepository;
+    operationLogRepository;
+    constructor(orderRepository, orderDetailsRepository, productionPlanRepository, orderTaskRepository, supplierRepository, operationLogRepository) {
         this.orderRepository = orderRepository;
         this.orderDetailsRepository = orderDetailsRepository;
         this.productionPlanRepository = productionPlanRepository;
+        this.orderTaskRepository = orderTaskRepository;
+        this.supplierRepository = supplierRepository;
+        this.operationLogRepository = operationLogRepository;
     }
     async getOrderList(query) {
         const { page = 1, pageSize = 10, orderStatus, supplierName, startDate, endDate, djbH, project, setCount, } = query;
@@ -44,7 +53,7 @@ let OrderService = class OrderService {
             queryBuilder.andWhere('order.project LIKE :project', { project: `%${project}%` });
         }
         if (setCount) {
-            queryBuilder.andWhere('order.setCount LIKE :setCount', { setCount: `%${setCount}%` });
+            queryBuilder.andWhere('order.set_count LIKE :setCount', { setCount: `%${setCount}%` });
         }
         if (startDate) {
             queryBuilder.andWhere('order.create_time >= :startDate', { startDate });
@@ -65,33 +74,45 @@ let OrderService = class OrderService {
         };
     }
     async getOrderDetail(id) {
+        console.log(`Getting order detail for id: ${id}`);
         const order = await this.orderRepository.findOne({ where: { id } });
         if (!order) {
+            console.error(`Order not found for id: ${id}`);
             throw new common_1.NotFoundException('Order not found');
         }
+        console.log(`Found order: ${order.djbH}, bpmCgddInstanceId: ${order.bpmCgddInstanceId}`);
         const details = await this.orderDetailsRepository.find({
             where: { bpmCgddInstanceId: order.bpmCgddInstanceId },
         });
-        return {
+        console.log(`Found ${details.length} order details`);
+        const result = {
             order,
             details,
         };
+        console.log('Order detail response:', result);
+        return result;
     }
     async markKeyMaterial(orderDetailId, isKeyMaterial) {
+        console.log(`Marking key material: ${orderDetailId}, isKeyMaterial: ${isKeyMaterial}`);
         const detail = await this.orderDetailsRepository.findOne({ where: { id: orderDetailId } });
         if (!detail) {
             throw new common_1.NotFoundException('Order detail not found');
         }
         detail.isKeyMaterial = isKeyMaterial ? '是' : '否';
-        return this.orderDetailsRepository.save(detail);
+        const savedDetail = await this.orderDetailsRepository.save(detail);
+        console.log('Key material marked successfully:', savedDetail);
+        return savedDetail;
     }
-    async issueTask(orderId, supplierId) {
-        const order = await this.orderRepository.findOne({ where: { id: orderId } });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found');
+    async markComplianceMaterial(orderDetailId, isComplianceMaterial) {
+        console.log(`Marking compliance material: ${orderDetailId}, isComplianceMaterial: ${isComplianceMaterial}`);
+        const detail = await this.orderDetailsRepository.findOne({ where: { id: orderDetailId } });
+        if (!detail) {
+            throw new common_1.NotFoundException('Order detail not found');
         }
-        order.orderStatus = '已下发';
-        return this.orderRepository.save(order);
+        detail.isComplianceMaterial = isComplianceMaterial ? '是' : '否';
+        const savedDetail = await this.orderDetailsRepository.save(detail);
+        console.log('Compliance material marked successfully:', savedDetail);
+        return savedDetail;
     }
     async syncErpData() {
         return {
@@ -282,6 +303,141 @@ let OrderService = class OrderService {
         console.log(`Order status updated successfully: ${updatedOrder.id}`);
         return updatedOrder;
     }
+    async getSupplierList() {
+        console.log('Getting supplier list');
+        const suppliers = await this.supplierRepository.find({ where: { status: '启用' } });
+        console.log(`Found ${suppliers.length} suppliers`);
+        return suppliers;
+    }
+    async generatePlanFeedbackTemplate(orderId) {
+        console.log(`Generating plan feedback template for orderId: ${orderId}`);
+        const order = await this.orderRepository.findOne({ where: { id: orderId } });
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        const details = await this.orderDetailsRepository.find({
+            where: { bpmCgddInstanceId: order.bpmCgddInstanceId },
+        });
+        console.log(`Found ${details.length} purchase details`);
+        const template = details.map(detail => ({
+            materialCode: detail.materialCode,
+            materialDesc: detail.materialDesc,
+            quantity: detail.quantity,
+            planDate: detail.planDate,
+            isKeyMaterial: detail.isKeyMaterial === '是',
+            isComplianceMaterial: detail.isComplianceMaterial === '是',
+            planStatus: '待确认',
+            supplierCode: detail.supplierCode,
+            supplierName: order.supplierName,
+            orderNo: detail.orderNo,
+            remarks: ''
+        }));
+        console.log(`Generated plan feedback template with ${template.length} items`);
+        return template;
+    }
+    async issueOrder(orderId, supplierId, issueDesc, planCompleteTime, detailMarks, planFeedbackTemplate) {
+        console.log(`Issuing order ${orderId} to supplier ${supplierId}`);
+        const queryRunner = this.orderRepository.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            const order = await queryRunner.manager.findOne(purchase_order_entity_1.PurchaseOrder, { where: { id: orderId } });
+            if (!order) {
+                throw new common_1.NotFoundException('Order not found');
+            }
+            if (order.orderStatus !== '待下发' && order.orderStatus !== '有变更') {
+                throw new Error('Only orders with status "待下发" or "有变更" can be issued');
+            }
+            const supplier = await queryRunner.manager.findOne(supplier_entity_1.Supplier, { where: { id: supplierId } });
+            if (!supplier || supplier.status !== '启用') {
+                throw new Error('Supplier not found or not enabled');
+            }
+            for (const mark of detailMarks) {
+                const detail = await queryRunner.manager.findOne(purchase_details_entity_1.PurchaseDetails, { where: { id: mark.detailId } });
+                if (detail) {
+                    detail.isKeyMaterial = mark.isKeyMaterial ? '是' : '否';
+                    detail.isComplianceMaterial = mark.isComplianceMaterial ? '是' : '否';
+                    await queryRunner.manager.save(detail);
+                }
+            }
+            let planCounter = 0;
+            for (const planItem of planFeedbackTemplate) {
+                const uniqueKey = `${planItem.materialCode || 'manual'}_${planItem.purchaseDetailsId || Math.random()}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                let productionPlan = null;
+                if (planItem.purchaseDetailsId && planItem.materialCode) {
+                    productionPlan = await queryRunner.manager.findOne(production_plan_entity_1.ProductionPlan, {
+                        where: { materialCode: planItem.materialCode, purchaseDetailsId: planItem.purchaseDetailsId }
+                    });
+                }
+                if (!productionPlan) {
+                    const timestamp = Date.now().toString().slice(-10);
+                    const counterStr = planCounter.toString().padStart(2, '0');
+                    const id = `PP${timestamp}_${counterStr}`.slice(0, 16);
+                    productionPlan = queryRunner.manager.create(production_plan_entity_1.ProductionPlan, {
+                        id: id,
+                        purchaseDetailsId: planItem.purchaseDetailsId || 0,
+                        planName: `计划反馈-${order.djbH}`,
+                        planType: '采购计划',
+                        planClass: planItem.planClass,
+                        planDept: '采购部',
+                        planMaker: '系统',
+                        planDate: new Date(),
+                        planStatus: planItem.planStatus || '待确认',
+                        materialCode: planItem.materialCode,
+                        materialDesc: planItem.materialDesc,
+                        quantity: planItem.quantity,
+                        unit: '个',
+                        plannedDate: planItem.plannedDate || new Date(),
+                        finishedQuantity: 0,
+                        isKeyMaterial: planItem.isKeyMaterial,
+                        productionLine: '',
+                        remarks: planItem.remarks || ''
+                    });
+                    await queryRunner.manager.save(productionPlan);
+                }
+                else {
+                    productionPlan.planStatus = planItem.planStatus || productionPlan.planStatus;
+                    productionPlan.planClass = planItem.planClass || productionPlan.planClass;
+                    productionPlan.remarks = planItem.remarks || productionPlan.remarks;
+                    await queryRunner.manager.save(productionPlan);
+                }
+            }
+            const orderTask = queryRunner.manager.create(purchase_order_task_entity_1.PurchaseOrderTask, {
+                orderId: order.id,
+                supplierId: supplier.id,
+                taskStatus: '已下发',
+                issueDesc: issueDesc,
+                planCompleteTime: planCompleteTime
+            });
+            await queryRunner.manager.save(orderTask);
+            order.orderStatus = '已下发';
+            await queryRunner.manager.save(order);
+            const operationLog = queryRunner.manager.create(operation_log_entity_1.OperationLog, {
+                operationType: '订单下发',
+                operationDesc: `订单 ${order.djbH} 已下发给供应商 ${supplier.supplierName}`,
+                operator: '系统',
+                operatedAt: new Date(),
+                relatedId: order.id.toString()
+            });
+            await queryRunner.manager.save(operationLog);
+            await queryRunner.commitTransaction();
+            console.log(`Order ${orderId} issued successfully to supplier ${supplierId}`);
+            return {
+                success: true,
+                message: '订单下发成功',
+                orderId: order.id,
+                taskId: orderTask.id
+            };
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            console.error('Error issuing order:', error);
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
+    }
 };
 exports.OrderService = OrderService;
 exports.OrderService = OrderService = __decorate([
@@ -289,7 +445,13 @@ exports.OrderService = OrderService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(purchase_order_entity_1.PurchaseOrder)),
     __param(1, (0, typeorm_1.InjectRepository)(purchase_details_entity_1.PurchaseDetails)),
     __param(2, (0, typeorm_1.InjectRepository)(production_plan_entity_1.ProductionPlan)),
+    __param(3, (0, typeorm_1.InjectRepository)(purchase_order_task_entity_1.PurchaseOrderTask)),
+    __param(4, (0, typeorm_1.InjectRepository)(supplier_entity_1.Supplier)),
+    __param(5, (0, typeorm_1.InjectRepository)(operation_log_entity_1.OperationLog)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])
 ], OrderService);

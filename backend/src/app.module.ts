@@ -15,6 +15,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { IntegrationModule } from './integration/integration.module';
 import { TaskModule } from './task/task.module';
 import { NotificationModule } from './notification/notification.module';
+import { SupplierModule } from './supplier/supplier.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { NotificationModule } from './notification/notification.module';
     IntegrationModule,
     TaskModule,
     NotificationModule,
+    SupplierModule,
   ],
   controllers: [AppController],
   providers: [AppService],

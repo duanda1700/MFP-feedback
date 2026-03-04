@@ -30,8 +30,8 @@ let OrderController = class OrderController {
     async markKeyMaterial(body) {
         return this.orderService.markKeyMaterial(body.orderDetailId, body.isKeyMaterial);
     }
-    async issueTask(body) {
-        return this.orderService.issueTask(body.orderId, body.supplierId);
+    async markComplianceMaterial(body) {
+        return this.orderService.markComplianceMaterial(body.orderDetailId, body.isComplianceMaterial);
     }
     async syncErpData() {
         return this.orderService.syncErpData();
@@ -56,6 +56,15 @@ let OrderController = class OrderController {
     }
     async updateOrderStatus(id, body) {
         return this.orderService.updateOrderStatus(id, body.status);
+    }
+    async getSuppliers() {
+        return this.orderService.getSupplierList();
+    }
+    async generateTemplate(orderId) {
+        return this.orderService.generatePlanFeedbackTemplate(orderId);
+    }
+    async issueOrder(body) {
+        return this.orderService.issueOrder(body.orderId, body.supplierId, body.issueDesc, body.planCompleteTime, body.detailMarks, body.planFeedbackTemplate);
     }
 };
 exports.OrderController = OrderController;
@@ -85,12 +94,12 @@ __decorate([
 ], OrderController.prototype, "markKeyMaterial", null);
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.Post)('issue-task'),
+    (0, common_1.Post)('mark-compliance-material'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], OrderController.prototype, "issueTask", null);
+], OrderController.prototype, "markComplianceMaterial", null);
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('sync-erp'),
@@ -156,6 +165,29 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], OrderController.prototype, "updateOrderStatus", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Get)('suppliers'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "getSuppliers", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Get)('generate-template/:orderId'),
+    __param(0, (0, common_1.Param)('orderId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "generateTemplate", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('issue'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "issueOrder", null);
 exports.OrderController = OrderController = __decorate([
     (0, common_1.Controller)('api/order'),
     __metadata("design:paramtypes", [order_service_1.OrderService])
