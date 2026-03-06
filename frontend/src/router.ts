@@ -41,12 +41,7 @@ const routes = [
         component: () => import('./views/PurchaseTrack.vue'),
         meta: { title: '采购订单跟踪' }
       },
-      {
-        path: 'production-plan',
-        name: 'ProductionPlan',
-        component: () => import('./views/ProductionPlan.vue'),
-        meta: { title: '生产计划分解' }
-      },
+
       {
         path: 'progress-feedback',
         name: 'ProgressFeedback',

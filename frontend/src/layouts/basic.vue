@@ -44,11 +44,7 @@
               <i class="el-icon-s-grid"></i>
               <span>生产协同</span>
             </template>
-            <el-menu-item index="/app/production-plan">
-              <template #title>
-                <span>生产计划分解</span>
-              </template>
-            </el-menu-item>
+
             <el-menu-item index="/app/production-plan-confirmation">
               <template #title>
                 <span>生产计划确认</span>
