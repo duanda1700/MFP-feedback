@@ -73,8 +73,9 @@ export const notificationApi = {
 export const supplierApi = {
   getOrders: () => request.get('/supplier/orders'),
   getOrderDetails: (orderId: string) => request.get(`/supplier/orders/${orderId}`),
-  getOrderPlans: (orderId: string, params: any) => request.get('/supplier/production-plans', { params }),
-  updatePlanStatus: (planId: string, status: string) => request.put(`/supplier/production-plans/${planId}/status`, { status })
+  getOrderPlans: (orderId: string, params: any) => request.get('/supplier/production-plans', { params: { ...params, orderId } }),
+  updatePlanStatus: (planId: string, status: string) => request.put(`/supplier/production-plans/${planId}/status`, { status }),
+  batchUpdatePlanStatus: (planIds: string[], status: string) => request.put('/supplier/production-plans/batch-status', { planIds, status })
 };
 
 // 导出单独的函数以便在组件中直接使用

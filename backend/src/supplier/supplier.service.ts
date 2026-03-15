@@ -86,23 +86,33 @@ export class SupplierService {
       startDate,
       endDate,
       orderId,
+      planNameEndsWith,
     } = query;
 
+    console.log(`getSupplierProductionPlans called with orderId: ${orderId}, supplierId: ${supplierId}`);
+
     const queryBuilder = this.productionPlanRepository.createQueryBuilder('plan');
-    
-    // 如果supplierId为null，返回所有生产计划（用于测试）
-    if (supplierId) {
-      // 这里需要根据实际数据结构调整，可能需要通过订单关联到供应商
-      // 假设生产计划通过purchaseDetailsId关联到采购订单详情，再关联到采购订单
+
+    // 如果提供了 orderId，通过 plan_name 包含 djbH 进行关联
+    if (orderId) {
+      const order = await this.orderRepository.findOne({ 
+        where: { id: orderId } 
+      });
+      
+      if (order) {
+        console.log(`Found order: ${order.djbH}`);
+        queryBuilder.where('plan.plan_name LIKE :orderNumberPattern', { 
+          orderNumberPattern: `%${order.djbH}%` 
+        });
+      }
+    } else if (supplierId) {
       queryBuilder
         .innerJoin('purchase_details', 'details', 'plan.purchase_details_id = details.id')
         .innerJoin('purchase_order', 'order', 'details.bpm_cgdd_instance_id = order.bpm_cgdd_instance_id')
         .where('order.supplier_id = :supplierId', { supplierId });
     }
-    
-    if (orderId) {
-      queryBuilder.andWhere('order.id = :orderId', { orderId });
-    }
+
+    // 添加其他过滤条件
     if (planStatus) {
       queryBuilder.andWhere('plan.plan_status = :planStatus', { planStatus });
     }
@@ -115,12 +125,20 @@ export class SupplierService {
     if (endDate) {
       queryBuilder.andWhere('plan.create_time <= :endDate', { endDate });
     }
+    if (planNameEndsWith) {
+      queryBuilder.andWhere('plan.plan_name LIKE :planNameEndsWith', { planNameEndsWith: `%${planNameEndsWith}` });
+    }
+
+    console.log('SQL Query:', queryBuilder.getSql());
+    console.log('Query Parameters:', queryBuilder.getParameters());
 
     const [plans, total] = await queryBuilder
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .orderBy('plan.create_time', 'DESC')
       .getManyAndCount();
+
+    console.log(`Found ${plans.length} production plans, total: ${total}`);
 
     return {
       data: plans,
@@ -155,5 +173,36 @@ export class SupplierService {
 
     plan.planStatus = status;
     return this.productionPlanRepository.save(plan);
+  }
+
+  // 批量更新生产计划状态
+  async batchUpdatePlanStatus(planIds: string[], status: string, supplierId: number) {
+    console.log(`Batch updating ${planIds.length} plans to status: ${status}`);
+    
+    const updatedPlans: ProductionPlan[] = [];
+    
+    for (const planId of planIds) {
+      try {
+        const plan = await this.productionPlanRepository.findOne({
+          where: { id: planId }
+        });
+        
+        if (plan) {
+          plan.planStatus = status;
+          const savedPlan = await this.productionPlanRepository.save(plan);
+          updatedPlans.push(savedPlan);
+        }
+      } catch (error) {
+        console.error(`Failed to update plan ${planId}:`, error);
+      }
+    }
+    
+    console.log(`Successfully updated ${updatedPlans.length} plans`);
+    
+    return {
+      success: true,
+      updatedCount: updatedPlans.length,
+      updatedPlans
+    };
   }
 }

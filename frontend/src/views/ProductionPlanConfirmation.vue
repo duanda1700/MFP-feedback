@@ -8,6 +8,14 @@
         <el-icon><View /></el-icon>
         刷新列表
       </el-button>
+      <el-button 
+        v-if="searchForm.orderId" 
+        type="primary" 
+        @click="handleConfirmSubmit"
+        :loading="confirming"
+      >
+        确认提交
+      </el-button>
     </div>
     
     <!-- 搜索和筛选 -->
@@ -15,7 +23,7 @@
       <el-card>
         <el-form :inline="true" :model="searchForm" class="search-form">
           <el-form-item label="采购订单">
-            <el-select v-model="searchForm.orderId" placeholder="选择采购订单" style="width: 240px">
+            <el-select v-model="searchForm.orderId" placeholder="选择采购订单" style="width: 240px" @change="handleOrderChange">
               <el-option 
                 v-for="order in orders" 
                 :key="order.id" 
@@ -25,18 +33,25 @@
             </el-select>
           </el-form-item>
           
-          <el-form-item label="计划编号">
-            <el-input v-model="searchForm.planNumber" placeholder="请输入计划编号" />
-          </el-form-item>
-          
-          <el-form-item label="计划状态">
+          <!-- 如果选择了订单，显示计划状态筛选 -->
+          <el-form-item v-if="searchForm.orderId" label="计划状态">
             <el-select v-model="searchForm.planStatus" placeholder="请选择计划状态">
               <el-option label="待确认" value="待确认" />
               <el-option label="已确认" value="已确认" />
               <el-option label="进行中" value="进行中" />
               <el-option label="已完成" value="已完成" />
+              <el-option label="待反馈" value="待反馈" />
             </el-select>
           </el-form-item>
+          
+          <!-- 如果没有选择订单，显示原来的筛选条件 -->
+          <template v-else>
+            <el-form-item label="订单状态">
+              <el-select v-model="searchForm.orderStatus" placeholder="请选择订单状态">
+                <el-option label="已下发" value="已下发" />
+              </el-select>
+            </el-form-item>
+          </template>
           
           <el-form-item>
             <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -59,20 +74,42 @@
           :data="productionPlans" 
           style="width: 100%"
         >
-          <el-table-column prop="id" label="订单ID" width="100" />
-          <el-table-column prop="djbH" label="订单编号" />
-          <el-table-column prop="purchaseManager" label="采购主管" />
-          <el-table-column prop="major" label="专业" width="100" />
-          <el-table-column prop="project" label="项目" width="180" />
-          <el-table-column prop="supplierName" label="供应商" />
-          <el-table-column prop="orderStatus" label="订单状态" width="120">
-            <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.orderStatus)">
-                {{ scope.row.orderStatus }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="setCount" label="台份" width="100" />
+          <!-- 如果选择了订单，显示生产计划列 -->
+          <template v-if="searchForm.orderId">
+            <el-table-column prop="planName" label="计划名称" width="200" />
+            <el-table-column prop="planClass" label="计划分类" width="150" />
+            <el-table-column prop="planType" label="计划类型" width="120" />
+            <el-table-column prop="materialCode" label="物料编码" width="180" />
+            <el-table-column prop="materialDesc" label="物料描述" min-width="200" />
+            <el-table-column prop="quantity" label="数量" width="100" />
+            <el-table-column prop="unit" label="单位" width="80" />
+            <el-table-column prop="planStatus" label="计划状态" width="120">
+              <template #default="scope">
+                <el-tag :type="getStatusType(scope.row.planStatus)">
+                  {{ scope.row.planStatus }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </template>
+          
+          <!-- 如果没有选择订单，显示原来的采购订单列 -->
+          <template v-else>
+            <el-table-column prop="id" label="订单ID" width="100" />
+            <el-table-column prop="djbH" label="订单编号" />
+            <el-table-column prop="purchaseManager" label="采购主管" />
+            <el-table-column prop="major" label="专业" width="100" />
+            <el-table-column prop="project" label="项目" width="180" />
+            <el-table-column prop="supplierName" label="供应商" />
+            <el-table-column prop="orderStatus" label="订单状态" width="120">
+              <template #default="scope">
+                <el-tag :type="getStatusType(scope.row.orderStatus)">
+                  {{ scope.row.orderStatus }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="setCount" label="台份" width="100" />
+          </template>
+          
           <el-table-column label="操作" width="100" fixed="right">
             <template #default="scope">
               <el-button size="small" @click="viewPlanDetail(scope.row)">详情</el-button>
@@ -106,7 +143,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { View, Close } from '@element-plus/icons-vue';
-import { purchaseOrderApi } from '../api';
+import { purchaseOrderApi, supplierApi } from '../api';
 
 // 路由
 const router = useRouter();
@@ -115,12 +152,13 @@ const router = useRouter();
 const orders = ref<any[]>([]);
 const productionPlans = ref<any[]>([]);
 const total = ref<number>(0);
+const confirming = ref<boolean>(false);
 
 // 搜索表单
 const searchForm = reactive({
   orderId: '',
-  planNumber: '',
-  planStatus: ''
+  planStatus: '',
+  orderStatus: '已下发'
 });
 
 // 分页
@@ -142,12 +180,12 @@ const getStatusType = (status: string) => {
       return 'warning';
     case '已确认':
       return 'success';
-    case '待下发':
-      return 'info';
-    case '有变更':
+    case '进行中':
       return 'primary';
-    case '已下发':
+    case '已完成':
       return 'success';
+    case '待反馈':
+      return 'info';
     default:
       return 'info';
   }
@@ -164,18 +202,38 @@ const loadSupplierOrders = async () => {
   }
 };
 
+// 订单选择变化
+const handleOrderChange = () => {
+  pagination.currentPage = 1;
+  loadProductionPlans();
+};
+
 // 加载生产计划
 const loadProductionPlans = async () => {
   try {
-    const response = await purchaseOrderApi.getList({
-      page: pagination.currentPage,
-      pageSize: pagination.pageSize,
-      orderStatus: '已下发',
-      ...searchForm
-    });
-    productionPlans.value = response.data || [];
-    total.value = response.total || 0;
-    pagination.total = total.value;
+    // 如果选择了订单，显示该订单的生产计划
+    if (searchForm.orderId) {
+      const response = await supplierApi.getOrderPlans(searchForm.orderId, {
+        page: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        orderId: searchForm.orderId,
+        planStatus: searchForm.planStatus
+      });
+      productionPlans.value = response.data || [];
+      total.value = response.total || 0;
+      pagination.total = total.value;
+    } else {
+      // 如果没有选择订单，显示原来的采购订单数据（保持原来的行为）
+      const response = await purchaseOrderApi.getList({
+        page: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        orderStatus: '已下发',
+        ...searchForm
+      });
+      productionPlans.value = response.data || [];
+      total.value = response.total || 0;
+      pagination.total = total.value;
+    }
   } catch (error) {
     ElMessage.error('获取生产计划失败');
     console.error('Failed to load production plans:', error);
@@ -207,9 +265,9 @@ const handleSearch = async () => {
 
 // 重置搜索
 const resetSearch = () => {
-  Object.keys(searchForm).forEach(key => {
-    searchForm[key as keyof typeof searchForm] = '';
-  });
+  searchForm.orderId = '';
+  searchForm.planStatus = '';
+  searchForm.orderStatus = '已下发';
   pagination.currentPage = 1;
   handleSearch();
 };
@@ -231,6 +289,33 @@ const viewPlanDetail = async (plan: any) => {
   router.push({
     path: `/app/purchase-order/issue/${plan.id}`
   });
+};
+
+// 确认提交 - 将所有计划状态改为已确认
+const handleConfirmSubmit = async () => {
+  if (!searchForm.orderId || productionPlans.value.length === 0) {
+    ElMessage.warning('请先选择采购订单并确保有生产计划数据');
+    return;
+  }
+
+  try {
+    confirming.value = true;
+    
+    const planIds = productionPlans.value.map((plan: any) => plan.id);
+    console.log('Confirming plans:', planIds);
+    
+    const response = await supplierApi.batchUpdatePlanStatus(planIds, '已确认');
+    console.log('Batch update response:', response);
+    
+    ElMessage.success(`成功确认 ${response.updatedCount} 条生产计划`);
+    
+    await loadProductionPlans();
+  } catch (error) {
+    ElMessage.error('确认提交失败');
+    console.error('Failed to confirm submit:', error);
+  } finally {
+    confirming.value = false;
+  }
 };
 
 // 初始化

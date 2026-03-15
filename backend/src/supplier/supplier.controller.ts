@@ -37,4 +37,14 @@ export class SupplierController {
     const supplierId = req.user.supplierId;
     return this.supplierService.updatePlanStatus(planId, body.status, supplierId);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('production-plans/batch-status')
+  async batchUpdatePlanStatus(
+    @Request() req, 
+    @Body() body: { planIds: string[], status: string }
+  ) {
+    const supplierId = req.user.supplierId;
+    return this.supplierService.batchUpdatePlanStatus(body.planIds, body.status, supplierId);
+  }
 }
