@@ -66,6 +66,9 @@ let OrderController = class OrderController {
     async issueOrder(body) {
         return this.orderService.issueOrder(body.orderId, body.supplierId, body.issueDesc, body.planCompleteTime, body.detailMarks, body.planFeedbackTemplate);
     }
+    async issueTask(body) {
+        return this.orderService.issueTask(body);
+    }
 };
 exports.OrderController = OrderController;
 __decorate([
@@ -188,6 +191,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OrderController.prototype, "issueOrder", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('issue-task'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "issueTask", null);
 exports.OrderController = OrderController = __decorate([
     (0, common_1.Controller)('api/order'),
     __metadata("design:paramtypes", [order_service_1.OrderService])

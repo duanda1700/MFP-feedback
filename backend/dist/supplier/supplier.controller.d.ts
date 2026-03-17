@@ -21,4 +21,12 @@ export declare class SupplierController {
     updatePlanStatus(req: any, planId: string, body: {
         status: string;
     }): Promise<import("../database/entities/production-plan.entity").ProductionPlan>;
+    batchUpdatePlanStatus(req: any, body: {
+        planIds: string[];
+        status: string;
+    }): Promise<{
+        success: boolean;
+        updatedCount: number;
+        updatedPlans: import("../database/entities/production-plan.entity").ProductionPlan[];
+    }>;
 }

@@ -93,40 +93,41 @@ export class SupplierService {
 
     const queryBuilder = this.productionPlanRepository.createQueryBuilder('plan');
 
-    // 如果提供了 orderId，通过 plan_name 包含 djbH 进行关联
+    // 如果提供了 orderId，通过 djbH 字段进行关联
     if (orderId) {
       const order = await this.orderRepository.findOne({ 
-        where: { id: orderId } 
+        where: { id: parseInt(orderId as string, 10) } 
       });
       
       if (order) {
-        console.log(`Found order: ${order.djbH}`);
-        queryBuilder.where('plan.plan_name LIKE :orderNumberPattern', { 
-          orderNumberPattern: `%${order.djbH}%` 
+        console.log(`Found order with djbH: ${order.djbH}`);
+        queryBuilder.where('plan.djbH = :djbH', { 
+          djbH: order.djbH 
         });
       }
     } else if (supplierId) {
       queryBuilder
-        .innerJoin('purchase_details', 'details', 'plan.purchase_details_id = details.id')
-        .innerJoin('purchase_order', 'order', 'details.bpm_cgdd_instance_id = order.bpm_cgdd_instance_id')
-        .where('order.supplier_id = :supplierId', { supplierId });
+        .innerJoin('purchase_details', 'details', 'plan.purchaseDetailsId = details.id')
+        .innerJoin('purchase_order', 'order', 'details.bpmCgddInstanceId = order.bpmCgddInstanceId')
+        .where('order.supplierId = :supplierId', { supplierId });
     }
+    // 如果既没有 orderId 也没有 supplierId，返回所有生产计划（用于管理员）
 
     // 添加其他过滤条件
     if (planStatus) {
-      queryBuilder.andWhere('plan.plan_status = :planStatus', { planStatus });
+      queryBuilder.andWhere('plan.planStatus = :planStatus', { planStatus });
     }
     if (planClass) {
-      queryBuilder.andWhere('plan.plan_class = :planClass', { planClass });
+      queryBuilder.andWhere('plan.planClass = :planClass', { planClass });
     }
     if (startDate) {
-      queryBuilder.andWhere('plan.create_time >= :startDate', { startDate });
+      queryBuilder.andWhere('plan.createTime >= :startDate', { startDate });
     }
     if (endDate) {
-      queryBuilder.andWhere('plan.create_time <= :endDate', { endDate });
+      queryBuilder.andWhere('plan.createTime <= :endDate', { endDate });
     }
     if (planNameEndsWith) {
-      queryBuilder.andWhere('plan.plan_name LIKE :planNameEndsWith', { planNameEndsWith: `%${planNameEndsWith}` });
+      queryBuilder.andWhere('plan.planName LIKE :planNameEndsWith', { planNameEndsWith: `%${planNameEndsWith}` });
     }
 
     console.log('SQL Query:', queryBuilder.getSql());

@@ -26,4 +26,9 @@ export declare class SupplierService {
         pageSize: any;
     }>;
     updatePlanStatus(planId: string, status: string, supplierId: number): Promise<ProductionPlan>;
+    batchUpdatePlanStatus(planIds: string[], status: string, supplierId: number): Promise<{
+        success: boolean;
+        updatedCount: number;
+        updatedPlans: ProductionPlan[];
+    }>;
 }

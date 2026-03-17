@@ -208,7 +208,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ArrowLeft, Refresh, Plus, Delete } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { purchaseOrderApi } from '../api';
+import { purchaseOrderApi, supplierApi } from '../api';
 
 // 路由和导航
 const route = useRoute();
@@ -475,9 +475,47 @@ const loadData = async () => {
         console.log('Set supplier ID:', defaultSupplier.id);
       }
     }
+    
+    // 自动加载已生成的生产计划
+    await loadExistingPlans();
   } catch (error) {
     console.error('Failed to load data:', error);
     ElMessage.error('加载数据失败');
+  }
+};
+
+// 加载已生成的生产计划
+const loadExistingPlans = async () => {
+  try {
+    console.log('Loading existing production plans for order:', orderId.value);
+    const response = await supplierApi.getOrderPlans(orderId.value.toString(), {
+      page: 1,
+      pageSize: 100
+    });
+    console.log('Existing plans response:', response);
+    
+    if (response.data && response.data.length > 0) {
+      // 如果有已生成的生产计划，直接显示
+      planFeedbackTemplate.value = response.data.map(plan => ({
+        materialCode: plan.materialCode,
+        materialDesc: plan.materialDesc,
+        quantity: plan.quantity,
+        planClass: plan.planClass || '生产计划',
+        planType: plan.planType || '',
+        planStatus: plan.planStatus || '待确认',
+        unit: plan.unit || '',
+        plannedDate: plan.plannedDate || '',
+        finishedQuantity: plan.finishedQuantity || 0,
+        remarks: plan.remarks || '',
+        purchaseDetailsId: plan.purchaseDetailsId,
+        id: plan.id
+      }));
+      console.log('Loaded existing plans:', planFeedbackTemplate.value.length);
+    } else {
+      console.log('No existing plans found');
+    }
+  } catch (error) {
+    console.error('Failed to load existing plans:', error);
   }
 };
 

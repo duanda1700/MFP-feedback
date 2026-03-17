@@ -31,14 +31,17 @@ export class OrderService {
       djbH,
       project,
       setCount,
+      applyUsername,
+      applyDept,
+      supplierId,
     } = query;
 
     const queryBuilder = this.orderRepository.createQueryBuilder('order');
     if (orderStatus) {
-      queryBuilder.andWhere('order.order_status = :orderStatus', { orderStatus });
+      queryBuilder.where('order.orderStatus = :orderStatus', { orderStatus });
     }
     if (supplierName) {
-      queryBuilder.andWhere('order.supplier_name LIKE :supplierName', { supplierName: `%${supplierName}%` });
+      queryBuilder.andWhere('order.supplierName LIKE :supplierName', { supplierName: `%${supplierName}%` });
     }
     if (djbH) {
       queryBuilder.andWhere('order.djbH LIKE :djbH', { djbH: `%${djbH}%` });
@@ -47,13 +50,22 @@ export class OrderService {
       queryBuilder.andWhere('order.project LIKE :project', { project: `%${project}%` });
     }
     if (setCount) {
-      queryBuilder.andWhere('order.set_count LIKE :setCount', { setCount: `%${setCount}%` });
+      queryBuilder.andWhere('order.setCount LIKE :setCount', { setCount: `%${setCount}%` });
+    }
+    if (applyUsername) {
+      queryBuilder.andWhere('order.applyUsername LIKE :applyUsername', { applyUsername: `%${applyUsername}%` });
+    }
+    if (applyDept) {
+      queryBuilder.andWhere('order.applyDept LIKE :applyDept', { applyDept: `%${applyDept}%` });
+    }
+    if (supplierId) {
+      queryBuilder.andWhere('order.supplierId = :supplierId', { supplierId });
     }
     if (startDate) {
-      queryBuilder.andWhere('order.create_time >= :startDate', { startDate });
+      queryBuilder.andWhere('order.createTime >= :startDate', { startDate });
     }
     if (endDate) {
-      queryBuilder.andWhere('order.create_time <= :endDate', { endDate });
+      queryBuilder.andWhere('order.createTime <= :endDate', { endDate });
     }
 
     const [orders, total] = await queryBuilder
@@ -61,6 +73,9 @@ export class OrderService {
       .take(pageSize)
       .orderBy('order.create_time', 'DESC')
       .getManyAndCount();
+
+    console.log('Orders found:', orders);
+    console.log('Total orders:', total);
 
     return {
       data: orders,
@@ -481,13 +496,17 @@ export class OrderService {
         // 为手动添加的行生成唯一标识
         const uniqueKey = `${planItem.materialCode || 'manual'}_${planItem.purchaseDetailsId || Math.random()}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         
-        // 检查是否已存在对应生产计划
+        // 检查是否已存在对应生产计划（包括planClass）
         let productionPlan: ProductionPlan | null = null;
         
-        // 只有当存在有效的purchaseDetailsId和materialCode时，才检查是否已存在对应生产计划
-        if (planItem.purchaseDetailsId && planItem.materialCode) {
+        // 只有当存在有效的purchaseDetailsId、materialCode和planClass时，才检查是否已存在对应生产计划
+        if (planItem.purchaseDetailsId && planItem.materialCode && planItem.planClass) {
           productionPlan = await queryRunner.manager.findOne(ProductionPlan, {
-            where: { materialCode: planItem.materialCode, purchaseDetailsId: planItem.purchaseDetailsId }
+            where: { 
+              materialCode: planItem.materialCode, 
+              purchaseDetailsId: planItem.purchaseDetailsId,
+              planClass: planItem.planClass
+            }
           }) as ProductionPlan | null;
         }
         
@@ -501,8 +520,9 @@ export class OrderService {
           productionPlan = queryRunner.manager.create(ProductionPlan, {
             id: id,
             purchaseDetailsId: planItem.purchaseDetailsId || 0,
+            djbH: order.djbH,
             planName: `计划反馈-${order.djbH}`,
-            planType: '采购计划',
+            planType: planItem.planType || '采购计划',
             planClass: planItem.planClass, // 添加计划分类
             planDept: '采购部',
             planMaker: '系统',
@@ -511,9 +531,9 @@ export class OrderService {
             materialCode: planItem.materialCode,
             materialDesc: planItem.materialDesc,
             quantity: planItem.quantity,
-            unit: '个',
+            unit: planItem.unit || '个',
             plannedDate: planItem.plannedDate || new Date(),
-            finishedQuantity: 0,
+            finishedQuantity: planItem.finishedQuantity || 0,
             isKeyMaterial: planItem.isKeyMaterial,
             productionLine: '',
             remarks: planItem.remarks || ''
@@ -571,5 +591,51 @@ export class OrderService {
       // 释放查询运行器
       await queryRunner.release();
     }
+  }
+
+  // 批量下发任务
+  async issueTask(data: { ids: number[]; supplierId: string; description: string; dueDate: Date }) {
+    console.log(`Issuing tasks for orders: ${data.ids} to supplier ${data.supplierId}`);
+    
+    const results: Array<{
+      success: boolean;
+      message: string;
+      orderId: number;
+      taskId?: number;
+    }> = [];
+    
+    for (const orderId of data.ids) {
+      try {
+        // 调用现有的issueOrder方法
+        const result = await this.issueOrder(
+          orderId,
+          parseInt(data.supplierId, 10),
+          data.description,
+          data.dueDate,
+          [], // 空的detailMarks
+          []  // 空的planFeedbackTemplate
+        );
+        results.push({
+          success: result.success,
+          message: result.message,
+          orderId: result.orderId,
+          taskId: result.taskId
+        });
+      } catch (error: any) {
+        console.error(`Error issuing order ${orderId}:`, error);
+        // 继续处理其他订单
+        results.push({
+          success: false,
+          message: `订单 ${orderId} 下发失败: ${error.message}`,
+          orderId
+        });
+      }
+    }
+    
+    return {
+      success: results.every(r => r.success),
+      message: results.every(r => r.success) ? '所有订单下发成功' : '部分订单下发失败',
+      results
+    };
   }
 }

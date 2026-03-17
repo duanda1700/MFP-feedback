@@ -1,6 +1,7 @@
 export declare class ProductionPlan {
     id: string;
     purchaseDetailsId: number;
+    djbH: string;
     planName: string;
     planType: string;
     planClass: string;

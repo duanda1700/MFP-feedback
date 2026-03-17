@@ -38,13 +38,13 @@ let OrderService = class OrderService {
         this.operationLogRepository = operationLogRepository;
     }
     async getOrderList(query) {
-        const { page = 1, pageSize = 10, orderStatus, supplierName, startDate, endDate, djbH, project, setCount, } = query;
+        const { page = 1, pageSize = 10, orderStatus, supplierName, startDate, endDate, djbH, project, setCount, applyUsername, applyDept, supplierId, } = query;
         const queryBuilder = this.orderRepository.createQueryBuilder('order');
         if (orderStatus) {
-            queryBuilder.andWhere('order.order_status = :orderStatus', { orderStatus });
+            queryBuilder.where('order.orderStatus = :orderStatus', { orderStatus });
         }
         if (supplierName) {
-            queryBuilder.andWhere('order.supplier_name LIKE :supplierName', { supplierName: `%${supplierName}%` });
+            queryBuilder.andWhere('order.supplierName LIKE :supplierName', { supplierName: `%${supplierName}%` });
         }
         if (djbH) {
             queryBuilder.andWhere('order.djbH LIKE :djbH', { djbH: `%${djbH}%` });
@@ -53,19 +53,30 @@ let OrderService = class OrderService {
             queryBuilder.andWhere('order.project LIKE :project', { project: `%${project}%` });
         }
         if (setCount) {
-            queryBuilder.andWhere('order.set_count LIKE :setCount', { setCount: `%${setCount}%` });
+            queryBuilder.andWhere('order.setCount LIKE :setCount', { setCount: `%${setCount}%` });
+        }
+        if (applyUsername) {
+            queryBuilder.andWhere('order.applyUsername LIKE :applyUsername', { applyUsername: `%${applyUsername}%` });
+        }
+        if (applyDept) {
+            queryBuilder.andWhere('order.applyDept LIKE :applyDept', { applyDept: `%${applyDept}%` });
+        }
+        if (supplierId) {
+            queryBuilder.andWhere('order.supplierId = :supplierId', { supplierId });
         }
         if (startDate) {
-            queryBuilder.andWhere('order.create_time >= :startDate', { startDate });
+            queryBuilder.andWhere('order.createTime >= :startDate', { startDate });
         }
         if (endDate) {
-            queryBuilder.andWhere('order.create_time <= :endDate', { endDate });
+            queryBuilder.andWhere('order.createTime <= :endDate', { endDate });
         }
         const [orders, total] = await queryBuilder
             .skip((page - 1) * pageSize)
             .take(pageSize)
             .orderBy('order.create_time', 'DESC')
             .getManyAndCount();
+        console.log('Orders found:', orders);
+        console.log('Total orders:', total);
         return {
             data: orders,
             total,
@@ -364,9 +375,13 @@ let OrderService = class OrderService {
             for (const planItem of planFeedbackTemplate) {
                 const uniqueKey = `${planItem.materialCode || 'manual'}_${planItem.purchaseDetailsId || Math.random()}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
                 let productionPlan = null;
-                if (planItem.purchaseDetailsId && planItem.materialCode) {
+                if (planItem.purchaseDetailsId && planItem.materialCode && planItem.planClass) {
                     productionPlan = await queryRunner.manager.findOne(production_plan_entity_1.ProductionPlan, {
-                        where: { materialCode: planItem.materialCode, purchaseDetailsId: planItem.purchaseDetailsId }
+                        where: {
+                            materialCode: planItem.materialCode,
+                            purchaseDetailsId: planItem.purchaseDetailsId,
+                            planClass: planItem.planClass
+                        }
                     });
                 }
                 if (!productionPlan) {
@@ -376,8 +391,9 @@ let OrderService = class OrderService {
                     productionPlan = queryRunner.manager.create(production_plan_entity_1.ProductionPlan, {
                         id: id,
                         purchaseDetailsId: planItem.purchaseDetailsId || 0,
+                        djbH: order.djbH,
                         planName: `计划反馈-${order.djbH}`,
-                        planType: '采购计划',
+                        planType: planItem.planType || '采购计划',
                         planClass: planItem.planClass,
                         planDept: '采购部',
                         planMaker: '系统',
@@ -386,9 +402,9 @@ let OrderService = class OrderService {
                         materialCode: planItem.materialCode,
                         materialDesc: planItem.materialDesc,
                         quantity: planItem.quantity,
-                        unit: '个',
+                        unit: planItem.unit || '个',
                         plannedDate: planItem.plannedDate || new Date(),
-                        finishedQuantity: 0,
+                        finishedQuantity: planItem.finishedQuantity || 0,
                         isKeyMaterial: planItem.isKeyMaterial,
                         productionLine: '',
                         remarks: planItem.remarks || ''
@@ -437,6 +453,34 @@ let OrderService = class OrderService {
         finally {
             await queryRunner.release();
         }
+    }
+    async issueTask(data) {
+        console.log(`Issuing tasks for orders: ${data.ids} to supplier ${data.supplierId}`);
+        const results = [];
+        for (const orderId of data.ids) {
+            try {
+                const result = await this.issueOrder(orderId, parseInt(data.supplierId, 10), data.description, data.dueDate, [], []);
+                results.push({
+                    success: result.success,
+                    message: result.message,
+                    orderId: result.orderId,
+                    taskId: result.taskId
+                });
+            }
+            catch (error) {
+                console.error(`Error issuing order ${orderId}:`, error);
+                results.push({
+                    success: false,
+                    message: `订单 ${orderId} 下发失败: ${error.message}`,
+                    orderId
+                });
+            }
+        }
+        return {
+            success: results.every(r => r.success),
+            message: results.every(r => r.success) ? '所有订单下发成功' : '部分订单下发失败',
+            results
+        };
     }
 };
 exports.OrderService = OrderService;

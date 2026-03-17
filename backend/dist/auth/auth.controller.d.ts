@@ -17,8 +17,6 @@ export declare class AuthController {
             department: any;
             supplierId: any;
         };
-    } | {
-        message: string;
     }>;
     register(registerDto: {
         username: string;

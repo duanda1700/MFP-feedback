@@ -36,7 +36,7 @@ service.interceptors.response.use(
     const { data } = response;
     
     // 检查响应状态
-    if (data.code && data.code !== 200) {
+    if (data.code !== undefined && data.code !== 200) {
       // 处理错误
       console.error('Response error:', data.message);
       return Promise.reject(new Error(data.message || 'Request failed'));

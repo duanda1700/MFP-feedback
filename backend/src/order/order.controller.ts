@@ -109,4 +109,15 @@ export class OrderController {
       body.planFeedbackTemplate
     );
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('issue-task')
+  async issueTask(@Body() body: {
+    ids: number[];
+    supplierId: string;
+    description: string;
+    dueDate: Date;
+  }) {
+    return this.orderService.issueTask(body);
+  }
 }

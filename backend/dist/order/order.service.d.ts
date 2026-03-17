@@ -68,4 +68,19 @@ export declare class OrderService {
         orderId: number;
         taskId: number;
     }>;
+    issueTask(data: {
+        ids: number[];
+        supplierId: string;
+        description: string;
+        dueDate: Date;
+    }): Promise<{
+        success: boolean;
+        message: string;
+        results: {
+            success: boolean;
+            message: string;
+            orderId: number;
+            taskId?: number;
+        }[];
+    }>;
 }

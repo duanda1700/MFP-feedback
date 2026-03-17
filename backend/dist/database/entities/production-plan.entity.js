@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 let ProductionPlan = class ProductionPlan {
     id;
     purchaseDetailsId;
+    djbH;
     planName;
     planType;
     planClass;
@@ -43,6 +44,11 @@ __decorate([
     (0, typeorm_1.Index)(),
     __metadata("design:type", Number)
 ], ProductionPlan.prototype, "purchaseDetailsId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'djbH', type: 'varchar', length: 100, nullable: true }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "djbH", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'plan_name', type: 'varchar', length: 100, nullable: false }),
     (0, typeorm_1.Index)(),

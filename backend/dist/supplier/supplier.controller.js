@@ -37,6 +37,10 @@ let SupplierController = class SupplierController {
         const supplierId = req.user.supplierId;
         return this.supplierService.updatePlanStatus(planId, body.status, supplierId);
     }
+    async batchUpdatePlanStatus(req, body) {
+        const supplierId = req.user.supplierId;
+        return this.supplierService.batchUpdatePlanStatus(body.planIds, body.status, supplierId);
+    }
 };
 exports.SupplierController = SupplierController;
 __decorate([
@@ -76,6 +80,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", Promise)
 ], SupplierController.prototype, "updatePlanStatus", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Put)('production-plans/batch-status'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], SupplierController.prototype, "batchUpdatePlanStatus", null);
 exports.SupplierController = SupplierController = __decorate([
     (0, common_1.Controller)('api/supplier'),
     __metadata("design:paramtypes", [supplier_service_1.SupplierService])

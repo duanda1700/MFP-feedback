@@ -305,16 +305,20 @@ const handleSyncERP = async () => {
 // 刷新列表
 const handleRefresh = async () => {
   try {
+    console.log('Search form:', searchForm);
     // 调用后端API获取采购订单列表
     const response = await purchaseOrderApi.getList({
       ...searchForm,
       page: pagination.currentPage,
       pageSize: pagination.pageSize
     });
+    console.log('Response:', response);
     // 过滤订单状态为"待下发"和"有变更"的行
     orderList.value = (response.data || []).filter((order: any) => {
+      console.log('Order status:', order.orderStatus);
       return order.orderStatus === '待下发' || order.orderStatus === '有变更';
     });
+    console.log('Filtered orders:', orderList.value);
     pagination.total = orderList.value.length;
     ElMessage.success('列表刷新成功');
   } catch (error) {
@@ -326,16 +330,20 @@ const handleRefresh = async () => {
 // 搜索
 const handleSearch = async () => {
   try {
+    console.log('Search form:', searchForm);
     // 调用后端API搜索采购订单
     const response = await purchaseOrderApi.getList({
       ...searchForm,
       page: pagination.currentPage,
       pageSize: pagination.pageSize
     });
+    console.log('Response:', response);
     // 过滤订单状态为"待下发"和"有变更"的行
     orderList.value = (response.data || []).filter((order: any) => {
+      console.log('Order status:', order.orderStatus);
       return order.orderStatus === '待下发' || order.orderStatus === '有变更';
     });
+    console.log('Filtered orders:', orderList.value);
     pagination.total = orderList.value.length;
     ElMessage.success('搜索成功');
   } catch (error) {

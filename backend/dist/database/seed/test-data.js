@@ -75,7 +75,7 @@ async function seedTestData() {
                 applyDept: '采购部门',
                 major: '测试专业',
                 project: '测试项目',
-                orderStatus: ['待处理', '处理中', '已完成'][i % 3],
+                orderStatus: ['待下发', '有变更', '已完成'][i % 3],
                 setCount: '1',
                 supplierName: `供应商${i}`,
                 purchaseManager: '采购经理'

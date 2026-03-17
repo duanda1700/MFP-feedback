@@ -9,6 +9,10 @@ export class ProductionPlan {
   @Index()
   purchaseDetailsId: number;
 
+  @Column({ name: 'djbH', type: 'varchar', length: 100, nullable: true })
+  @Index()
+  djbH: string;
+
   @Column({ name: 'plan_name', type: 'varchar', length: 100, nullable: false })
   @Index()
   planName: string;
