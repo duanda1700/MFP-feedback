@@ -27,7 +27,9 @@
           
           <el-form-item label="订单状态">
             <el-select v-model="searchForm.orderStatus" placeholder="请选择订单状态">
+              <el-option label="全部" value="已下发,已确认" />
               <el-option label="已下发" value="已下发" />
+              <el-option label="已确认" value="已确认" />
             </el-select>
           </el-form-item>
           
@@ -67,9 +69,15 @@
           </el-table-column>
           <el-table-column prop="setCount" label="台份" width="100" />
           
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" width="120" fixed="right">
             <template #default="scope">
-              <el-button size="small" @click="viewPlanDetail(scope.row)">详情</el-button>
+              <el-button 
+                size="small" 
+                @click="viewPlanDetail(scope.row)"
+                :type="scope.row.orderStatus === '已下发' ? 'primary' : 'success'"
+              >
+                {{ scope.row.orderStatus === '已下发' ? '确认模板' : '更新模板' }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -109,7 +117,7 @@ const total = ref<number>(0);
 // 搜索表单
 const searchForm = reactive({
   orderId: '',
-  orderStatus: '已下发'
+  orderStatus: '已下发,已确认'
 });
 
 // 分页
@@ -210,7 +218,7 @@ const handleSearch = async () => {
 // 重置搜索
 const resetSearch = () => {
   searchForm.orderId = '';
-  searchForm.orderStatus = '已下发';
+  searchForm.orderStatus = '已下发,已确认';
   pagination.currentPage = 1;
   handleSearch();
 };

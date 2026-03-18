@@ -619,8 +619,25 @@ const loadExistingPlans = async () => {
     console.log('Existing plans response:', response);
     
     if (response.data && response.data.length > 0) {
+      let plans = response.data;
+      
+      // 如果订单状态为"已确认"，只显示plan_status为"已确认"且version最大的条目
+      if (order.value?.orderStatus === '已确认') {
+        console.log('Order status is "已确认", filtering plans...');
+        
+        // 找出最大的version
+        const maxVersion = Math.max(...plans.map((p: any) => p.version || 1));
+        console.log('Max version:', maxVersion);
+        
+        // 过滤出plan_status为"已确认"且version最大的条目
+        plans = plans.filter((p: any) => 
+          p.planStatus === '已确认' && (p.version || 1) === maxVersion
+        );
+        console.log('Filtered plans count:', plans.length);
+      }
+      
       // 如果有已生成的生产计划，直接显示
-      planFeedbackTemplate.value = response.data.map((plan: any) => ({
+      planFeedbackTemplate.value = plans.map((plan: any) => ({
         materialCode: plan.materialCode,
         materialDesc: plan.materialDesc,
         quantity: plan.quantity,

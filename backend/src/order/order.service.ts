@@ -38,7 +38,13 @@ export class OrderService {
 
     const queryBuilder = this.orderRepository.createQueryBuilder('order');
     if (orderStatus) {
-      queryBuilder.where('order.orderStatus = :orderStatus', { orderStatus });
+      // 支持多个状态查询，用逗号分隔
+      const statusArray = orderStatus.split(',').map((s: string) => s.trim());
+      if (statusArray.length === 1) {
+        queryBuilder.where('order.orderStatus = :orderStatus', { orderStatus: statusArray[0] });
+      } else {
+        queryBuilder.where('order.orderStatus IN (:...statusArray)', { statusArray });
+      }
     }
     if (supplierName) {
       queryBuilder.andWhere('order.supplierName LIKE :supplierName', { supplierName: `%${supplierName}%` });

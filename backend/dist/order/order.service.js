@@ -41,7 +41,13 @@ let OrderService = class OrderService {
         const { page = 1, pageSize = 10, orderStatus, supplierName, startDate, endDate, djbH, project, setCount, applyUsername, applyDept, supplierId, } = query;
         const queryBuilder = this.orderRepository.createQueryBuilder('order');
         if (orderStatus) {
-            queryBuilder.where('order.orderStatus = :orderStatus', { orderStatus });
+            const statusArray = orderStatus.split(',').map((s) => s.trim());
+            if (statusArray.length === 1) {
+                queryBuilder.where('order.orderStatus = :orderStatus', { orderStatus: statusArray[0] });
+            }
+            else {
+                queryBuilder.where('order.orderStatus IN (:...statusArray)', { statusArray });
+            }
         }
         if (supplierName) {
             queryBuilder.andWhere('order.supplierName LIKE :supplierName', { supplierName: `%${supplierName}%` });
