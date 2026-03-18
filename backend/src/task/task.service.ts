@@ -89,6 +89,21 @@ export class TaskService {
     return task;
   }
 
+  // 获取任务数量
+  async getTaskCount(query: any) {
+    const { taskStatus } = query;
+    
+    const queryBuilder = this.taskRepository.createQueryBuilder('task');
+    
+    if (taskStatus) {
+      queryBuilder.andWhere('task.task_status = :taskStatus', { taskStatus });
+    }
+    
+    const count = await queryBuilder.getCount();
+    
+    return { count };
+  }
+
   // 启动任务处理器
   private startTaskProcessor() {
     setInterval(async () => {

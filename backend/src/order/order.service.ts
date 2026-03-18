@@ -490,6 +490,17 @@ export class OrderService {
         }
       }
       
+      // 查询该订单的最大版本号
+      const maxVersionResult = await queryRunner.manager
+        .createQueryBuilder()
+        .select('MAX(plan.version)', 'maxVersion')
+        .from(ProductionPlan, 'plan')
+        .where('plan.djbH = :djbH', { djbH: order.djbH })
+        .getRawOne();
+      
+      const nextVersion = (maxVersionResult.maxVersion || 0) + 1;
+      console.log(`Issuing order ${order.djbH}, next version: ${nextVersion}`);
+      
       // 5. 处理计划反馈模板，使用计数器确保每条记录都有唯一的ID
       let planCounter = 0;
       for (const planItem of planFeedbackTemplate) {
@@ -536,7 +547,9 @@ export class OrderService {
             finishedQuantity: planItem.finishedQuantity || 0,
             isKeyMaterial: planItem.isKeyMaterial,
             productionLine: '',
-            remarks: planItem.remarks || ''
+            remarks: planItem.remarks || '',
+            version: nextVersion,
+            sortOrder: planItem.sortOrder || 0
           });
           await queryRunner.manager.save(productionPlan);
         } else {

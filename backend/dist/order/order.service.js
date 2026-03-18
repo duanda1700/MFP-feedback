@@ -371,6 +371,14 @@ let OrderService = class OrderService {
                     await queryRunner.manager.save(detail);
                 }
             }
+            const maxVersionResult = await queryRunner.manager
+                .createQueryBuilder()
+                .select('MAX(plan.version)', 'maxVersion')
+                .from(production_plan_entity_1.ProductionPlan, 'plan')
+                .where('plan.djbH = :djbH', { djbH: order.djbH })
+                .getRawOne();
+            const nextVersion = (maxVersionResult.maxVersion || 0) + 1;
+            console.log(`Issuing order ${order.djbH}, next version: ${nextVersion}`);
             let planCounter = 0;
             for (const planItem of planFeedbackTemplate) {
                 const uniqueKey = `${planItem.materialCode || 'manual'}_${planItem.purchaseDetailsId || Math.random()}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -407,7 +415,9 @@ let OrderService = class OrderService {
                         finishedQuantity: planItem.finishedQuantity || 0,
                         isKeyMaterial: planItem.isKeyMaterial,
                         productionLine: '',
-                        remarks: planItem.remarks || ''
+                        remarks: planItem.remarks || '',
+                        version: nextVersion,
+                        sortOrder: planItem.sortOrder || 0
                     });
                     await queryRunner.manager.save(productionPlan);
                 }

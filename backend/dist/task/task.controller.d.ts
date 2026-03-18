@@ -8,6 +8,9 @@ export declare class TaskController {
         page: any;
         pageSize: any;
     }>;
+    getTaskCount(query: any): Promise<{
+        count: number;
+    }>;
     getTaskDetail(id: string): Promise<import("../database/entities/task.entity").Task>;
     cancelTask(id: string): Promise<import("../database/entities/task.entity").Task>;
     createTask(body: {

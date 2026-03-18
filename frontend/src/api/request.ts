@@ -49,6 +49,17 @@ service.interceptors.response.use(
     
     // 处理401错误
     if (error.response && error.response.status === 401) {
+      // 如果是refresh接口本身返回401，直接跳转登录页
+      if (error.config.url === '/auth/refresh') {
+        console.error('Refresh token failed, redirecting to login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('permissions');
+        localStorage.removeItem('roles');
+        window.location.href = '/auth/login';
+        return Promise.reject(error);
+      }
+      
       // 标记是否正在刷新token
       if (isRefreshing) {
         return new Promise((resolve) => {
@@ -63,9 +74,25 @@ service.interceptors.response.use(
       isRefreshing = true;
       
       try {
-        // 尝试刷新token
-        const refreshResponse = await service.post('/auth/refresh', {});
+        // 使用axios直接调用refresh接口，避免无限循环
+        const response = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Refresh failed');
+        }
+        
+        const refreshResponse = await response.json();
         const newToken = refreshResponse.access_token || refreshResponse.token;
+        
+        if (!newToken) {
+          throw new Error('No token in refresh response');
+        }
         
         // 更新localStorage中的token
         localStorage.setItem('token', newToken);

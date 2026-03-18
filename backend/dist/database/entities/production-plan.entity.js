@@ -31,6 +31,8 @@ let ProductionPlan = class ProductionPlan {
     isKeyMaterial;
     productionLine;
     remarks;
+    version;
+    sortOrder;
     createTime;
     updateTime;
 };
@@ -118,6 +120,16 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'remarks', type: 'varchar', length: 255, nullable: true }),
     __metadata("design:type", String)
 ], ProductionPlan.prototype, "remarks", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'version', type: 'int', nullable: false, default: 1 }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", Number)
+], ProductionPlan.prototype, "version", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'sort_order', type: 'int', nullable: false, default: 0 }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", Number)
+], ProductionPlan.prototype, "sortOrder", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'create_time' }),
     __metadata("design:type", Date)

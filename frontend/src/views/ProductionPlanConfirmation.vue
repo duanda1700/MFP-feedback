@@ -230,7 +230,8 @@ const handleCurrentChange = (current: number) => {
 // 查看订单详情
 const viewPlanDetail = async (order: any) => {
   router.push({
-    path: `/app/purchase-order/issue/${order.id}`
+    path: `/app/purchase-order/issue/${order.id}`,
+    query: { from: 'confirmation' }
   });
 };
 

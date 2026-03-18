@@ -12,13 +12,15 @@ const typeorm_1 = require("@nestjs/typeorm");
 const plan_service_1 = require("./plan.service");
 const plan_controller_1 = require("./plan.controller");
 const production_plan_entity_1 = require("../database/entities/production-plan.entity");
+const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
+const operation_log_entity_1 = require("../database/entities/operation-log.entity");
 const task_module_1 = require("../task/task.module");
 let PlanModule = class PlanModule {
 };
 exports.PlanModule = PlanModule;
 exports.PlanModule = PlanModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([production_plan_entity_1.ProductionPlan]), task_module_1.TaskModule],
+        imports: [typeorm_1.TypeOrmModule.forFeature([production_plan_entity_1.ProductionPlan, purchase_order_entity_1.PurchaseOrder, operation_log_entity_1.OperationLog]), task_module_1.TaskModule],
         providers: [plan_service_1.PlanService],
         controllers: [plan_controller_1.PlanController],
         exports: [plan_service_1.PlanService],

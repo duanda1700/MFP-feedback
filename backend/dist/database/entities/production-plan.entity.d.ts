@@ -18,6 +18,8 @@ export declare class ProductionPlan {
     isKeyMaterial: string;
     productionLine: string;
     remarks: string;
+    version: number;
+    sortOrder: number;
     createTime: Date;
     updateTime: Date;
 }

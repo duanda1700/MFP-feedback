@@ -23,7 +23,7 @@ export class SupplierController {
   @UseGuards(AuthGuard('jwt'))
   @Get('production-plans')
   async getSupplierProductionPlans(@Request() req, @Query() query) {
-    const supplierId = req.user.supplierId;
+    const supplierId = req.user.supplierId || null;
     return this.supplierService.getSupplierProductionPlans(supplierId, query);
   }
 

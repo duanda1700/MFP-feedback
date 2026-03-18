@@ -77,6 +77,15 @@ let TaskService = TaskService_1 = class TaskService {
         }
         return task;
     }
+    async getTaskCount(query) {
+        const { taskStatus } = query;
+        const queryBuilder = this.taskRepository.createQueryBuilder('task');
+        if (taskStatus) {
+            queryBuilder.andWhere('task.task_status = :taskStatus', { taskStatus });
+        }
+        const count = await queryBuilder.getCount();
+        return { count };
+    }
     startTaskProcessor() {
         setInterval(async () => {
             if (!this.isProcessing && this.taskQueue.length > 0) {

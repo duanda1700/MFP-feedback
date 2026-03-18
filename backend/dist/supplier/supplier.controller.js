@@ -30,7 +30,7 @@ let SupplierController = class SupplierController {
         return this.supplierService.getOrderDetail(orderId, supplierId);
     }
     async getSupplierProductionPlans(req, query) {
-        const supplierId = req.user.supplierId;
+        const supplierId = req.user.supplierId || null;
         return this.supplierService.getSupplierProductionPlans(supplierId, query);
     }
     async updatePlanStatus(req, planId, body) {

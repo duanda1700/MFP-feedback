@@ -15,9 +15,16 @@ export declare class PlanController {
         plans: any[];
         createdBy: number;
         createdName: string;
+        orderId?: number;
     }): Promise<{
-        taskId: string;
-        taskStatus: string;
+        success: boolean;
+        count: number;
+        message: string;
+        version?: undefined;
+    } | {
+        success: boolean;
+        count: number;
+        version: any;
         message: string;
     }>;
     submitApproval(id: string): Promise<import("../database/entities/production-plan.entity").ProductionPlan>;

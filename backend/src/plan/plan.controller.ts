@@ -34,8 +34,8 @@ export class PlanController {
   @UseGuards(AuthGuard('jwt'))
   @Post('import')
   @RequirePermission('plan:create')
-  async importPlan(@Body() body: { plans: any[]; createdBy: number; createdName: string }) {
-    return this.planService.importPlan(body.plans, body.createdBy, body.createdName);
+  async importPlan(@Body() body: { plans: any[]; createdBy: number; createdName: string; orderId?: number }) {
+    return this.planService.importPlan(body.plans, body.createdBy, body.createdName, body.orderId);
   }
 
   @UseGuards(AuthGuard('jwt'))

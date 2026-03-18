@@ -66,6 +66,14 @@ export class ProductionPlan {
   @Column({ name: 'remarks', type: 'varchar', length: 255, nullable: true })
   remarks: string;
 
+  @Column({ name: 'version', type: 'int', nullable: false, default: 1 })
+  @Index()
+  version: number;
+
+  @Column({ name: 'sort_order', type: 'int', nullable: false, default: 0 })
+  @Index()
+  sortOrder: number;
+
   @CreateDateColumn({ name: 'create_time' })
   createTime: Date;
 

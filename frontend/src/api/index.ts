@@ -46,9 +46,9 @@ export const progressFeedbackApi = {
 
 // 待办任务相关API
 export const todoApi = {
-  getList: (params: any) => request.get('/todo/list', { params }),
-  markAsDone: (id: string) => request.put(`/todo/mark-as-done/${id}`),
-  getCount: () => request.get('/todo/count')
+  getList: (params: any) => request.get('/task/list', { params }),
+  markAsDone: (id: string) => request.put(`/task/cancel/${id}`),
+  getCount: () => request.get('/task/count')
 };
 
 // 权限管理相关API

@@ -14,6 +14,12 @@ export class TaskController {
     return this.taskService.getTaskList(query);
   }
 
+  @Get('count')
+  @RequirePermission('task:read')
+  async getTaskCount(@Query() query: any) {
+    return this.taskService.getTaskCount(query);
+  }
+
   @Get('detail/:id')
   @RequirePermission('task:read')
   async getTaskDetail(@Param('id') id: string) {

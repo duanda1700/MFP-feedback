@@ -6,7 +6,7 @@
         <el-icon><ArrowLeft /></el-icon>
         返回订单列表
       </el-button>
-      <h1>采购订单下发 - 订单编号 {{ order?.djbH }}</h1>
+      <h1>{{ isFromConfirmation ? '生产计划确认' : '采购订单下发' }} - 订单编号 {{ order?.djbH }}</h1>
     </div>
 
     <!-- 页面内容 -->
@@ -27,7 +27,7 @@
       </div>
 
       <!-- 右侧：下发信息编辑区 -->
-      <div class="right-section">
+      <div class="right-section" v-if="!isFromConfirmation">
         <h2>下发信息</h2>
         <el-form :model="issueForm" :rules="rules" ref="issueFormRef">
           <!-- 供应商选择 -->
@@ -75,7 +75,8 @@
       <!-- 采购订单明细 -->
       <div class="details-section">
         <h2>采购订单明细</h2>
-        <el-table :data="orderDetails" style="width: 100%" border>
+        <el-table :data="paginatedOrderDetails" style="width: 100%" border>
+          <el-table-column type="index" label="序号" width="60" :index="indexMethod1"></el-table-column>
           <el-table-column prop="materialCode" label="物料编码" width="180"></el-table-column>
           <el-table-column prop="materialDesc" label="物料描述" min-width="200"></el-table-column>
           <el-table-column prop="quantity" label="数量" width="100"></el-table-column>
@@ -107,18 +108,27 @@
           <el-table-column prop="supplierCode" label="供应商编码" width="120"></el-table-column>
           <el-table-column prop="detailStatus" label="状态" width="100"></el-table-column>
         </el-table>
+        <el-pagination
+          v-model:current-page="detailsCurrentPage"
+          v-model:page-size="detailsPageSize"
+          :page-sizes="[50, 100, 200]"
+          :total="orderDetails.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          style="margin-top: 16px; justify-content: flex-end;"
+        ></el-pagination>
       </div>
 
       <!-- 生产计划初始化 -->
       <div class="template-section">
         <div class="template-header">
-          <h2>生产计划初始化</h2>
-          <el-button type="primary" @click="generateTemplate">
+          <h2>{{ isFromConfirmation ? '生产计划确认' : '生产计划初始化' }}</h2>
+          <el-button v-if="!isFromConfirmation" type="primary" @click="generateTemplate">
           <el-icon><Refresh /></el-icon>
           生成计划
         </el-button>
         </div>
-        <el-table :data="planFeedbackTemplate" style="width: 100%" border :row-class-name="tableRowClassName">
+        <el-table :data="paginatedPlanTemplate" style="width: 100%" border :row-class-name="tableRowClassName">
+          <el-table-column type="index" label="序号" width="60" :index="indexMethod2"></el-table-column>
           <el-table-column prop="planClass" label="计划分类" width="150">
             <template #default="scope">
               <el-select v-model="scope.row.planClass" placeholder="请选择">
@@ -179,24 +189,37 @@
           </el-table-column>
           <el-table-column label="操作" width="200">
             <template #default="scope">
-              <el-button type="success" size="small" @click="addTemplateItem(scope.$index + 1)">
+              <el-button type="success" size="small" @click="addTemplateItem(indexMethod2(scope.$index))">
                 <el-icon><Plus /></el-icon>
                 新增行
               </el-button>
-              <el-button type="danger" size="small" @click="removeTemplateItem(scope.$index)">
+              <el-button type="danger" size="small" @click="removeTemplateItem(indexMethod2(scope.$index) - 1)">
                 <el-icon><Delete /></el-icon>
                 删除
               </el-button>
             </template>
           </el-table-column>
         </el-table>
+        <el-pagination
+          v-model:current-page="planCurrentPage"
+          v-model:page-size="planPageSize"
+          :page-sizes="[50, 100, 200]"
+          :total="planFeedbackTemplate.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          style="margin-top: 16px; justify-content: flex-end;"
+        ></el-pagination>
       </div>
 
       <!-- 底部按钮 -->
       <div class="bottom-buttons">
         <el-button @click="goBack">取消</el-button>
-        <el-button type="primary" @click="submitIssue" :loading="submitting">
+        <!-- 采购订单下发模块：显示提交下发按钮 -->
+        <el-button v-if="!isFromConfirmation" type="primary" @click="submitIssue" :loading="submitting">
           {{ submitting ? '提交中...' : '提交下发' }}
+        </el-button>
+        <!-- 生产计划确认模块：显示确认提交按钮 -->
+        <el-button v-if="isFromConfirmation && planFeedbackTemplate.length > 0" type="success" @click="confirmSubmit" :loading="confirming">
+          {{ confirming ? '确认中...' : '确认提交' }}
         </el-button>
       </div>
     </div>
@@ -208,7 +231,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ArrowLeft, Refresh, Plus, Delete } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { purchaseOrderApi, supplierApi } from '../api';
+import { purchaseOrderApi, supplierApi, productionPlanApi } from '../api';
 
 // 路由和导航
 const route = useRoute();
@@ -217,6 +240,11 @@ const orderId = computed(() => {
   const id = route.params.orderId;
   console.log('Order ID from route:', id);
   return Number(id);
+});
+
+// 判断是否来自生产计划确认模块
+const isFromConfirmation = computed(() => {
+  return route.query.from === 'confirmation';
 });
 
 // 表单数据
@@ -242,6 +270,35 @@ const orderDetails = ref([]);
 const suppliers = ref([]);
 const planFeedbackTemplate = ref([]);
 const submitting = ref(false);
+const confirming = ref(false);
+
+// 分页相关
+const detailsCurrentPage = ref(1);
+const detailsPageSize = ref(50);
+const planCurrentPage = ref(1);
+const planPageSize = ref(50);
+
+// 分页计算属性
+const paginatedOrderDetails = computed(() => {
+  const start = (detailsCurrentPage.value - 1) * detailsPageSize.value;
+  const end = start + detailsPageSize.value;
+  return orderDetails.value.slice(start, end);
+});
+
+const paginatedPlanTemplate = computed(() => {
+  const start = (planCurrentPage.value - 1) * planPageSize.value;
+  const end = start + planPageSize.value;
+  return planFeedbackTemplate.value.slice(start, end);
+});
+
+// 序号计算方法
+const indexMethod1 = (index) => {
+  return (detailsCurrentPage.value - 1) * detailsPageSize.value + index + 1;
+};
+
+const indexMethod2 = (index) => {
+  return (planCurrentPage.value - 1) * planPageSize.value + index + 1;
+};
 
 // 日期禁用函数
 const disabledDate = (time) => {
@@ -312,6 +369,7 @@ const generateTemplate = async () => {
     const templateItems = [];
     
     // 遍历采购订单明细，按照顺序生成计划
+    let sortOrder = 1; // 初始化sort_order计数器
     details.forEach(detail => {
       console.log('Processing detail:', detail);
       console.log('isKeyMaterial:', detail.isKeyMaterial);
@@ -329,7 +387,8 @@ const generateTemplate = async () => {
         plannedDate: detail.planDate || '',
         finishedQuantity: 0,
         remarks: '',
-        purchaseDetailsId: detail.id
+        purchaseDetailsId: detail.id,
+        sortOrder: sortOrder++ // 分配sort_order
       };
       templateItems.push(baseItem);
       
@@ -347,7 +406,8 @@ const generateTemplate = async () => {
           plannedDate: detail.planDate || '',
           finishedQuantity: 0,
           remarks: '',
-          purchaseDetailsId: detail.id
+          purchaseDetailsId: detail.id,
+          sortOrder: sortOrder++ // 分配sort_order
         });
       }
       
@@ -365,7 +425,8 @@ const generateTemplate = async () => {
           plannedDate: detail.planDate || '',
           finishedQuantity: 0,
           remarks: '',
-          purchaseDetailsId: detail.id
+          purchaseDetailsId: detail.id,
+          sortOrder: sortOrder++ // 分配sort_order
         });
       }
     });
@@ -390,6 +451,10 @@ const tableRowClassName = ({ row }: { row: any }) => {
 
 // 添加模板行
 const addTemplateItem = (index) => {
+  // 获取当前行的purchaseDetailsId（如果存在）
+  const currentRow = index > 0 ? planFeedbackTemplate.value[index - 1] : null;
+  const purchaseDetailsId = currentRow?.purchaseDetailsId || 0;
+  
   const newItem = {
     planClass: '',
     planType: '',
@@ -400,7 +465,8 @@ const addTemplateItem = (index) => {
     unit: '',
     plannedDate: '',
     finishedQuantity: 0,
-    remarks: ''
+    remarks: '',
+    purchaseDetailsId: purchaseDetailsId // 继承当前行的purchaseDetailsId
   };
   if (index !== undefined) {
     planFeedbackTemplate.value.splice(index, 0, newItem);
@@ -446,6 +512,64 @@ const submitIssue = async () => {
     ElMessage.error('订单下发失败');
   } finally {
     submitting.value = false;
+  }
+};
+
+// 确认提交 - 将所有计划以新增形式保存到production_plan表中，状态为"已确认"
+const confirmSubmit = async () => {
+  if (planFeedbackTemplate.value.length === 0) {
+    ElMessage.warning('请先生成生产计划');
+    return;
+  }
+
+  try {
+    confirming.value = true;
+    
+    // 准备计划数据，状态统一设置为"已确认"
+    const plans = planFeedbackTemplate.value.map(plan => ({
+      purchaseDetailsId: plan.purchaseDetailsId || 0,
+      djbH: order.value.djbH,
+      planName: `计划反馈-${order.value.djbH}`,
+      planType: plan.planType || '采购计划',
+      planClass: plan.planClass || '生产计划',
+      planDept: '采购部',
+      planMaker: '系统',
+      planDate: new Date(),
+      planStatus: '已确认',
+      materialCode: plan.materialCode,
+      materialDesc: plan.materialDesc,
+      quantity: plan.quantity,
+      unit: plan.unit || '个',
+      plannedDate: plan.plannedDate || new Date(),
+      finishedQuantity: plan.finishedQuantity || 0,
+      isKeyMaterial: plan.isKeyMaterial,
+      productionLine: '',
+      remarks: plan.remarks || '',
+      sortOrder: plan.sortOrder || 0
+    }));
+    
+    console.log('Confirming plans:', plans);
+    
+    // 批量导入计划
+    const response = await productionPlanApi.import({
+      plans: plans,
+      createdBy: 1,
+      createdName: '系统',
+      orderId: orderId.value
+    });
+    console.log('Import response:', response);
+    
+    ElMessage.success(`成功确认并保存 ${plans.length} 条生产计划`);
+    
+    // 返回上一页
+    setTimeout(() => {
+      router.back();
+    }, 1000);
+  } catch (error) {
+    ElMessage.error('确认提交失败');
+    console.error('Failed to confirm submit:', error);
+  } finally {
+    confirming.value = false;
   }
 };
 
@@ -508,6 +632,7 @@ const loadExistingPlans = async () => {
         finishedQuantity: plan.finishedQuantity || 0,
         remarks: plan.remarks || '',
         purchaseDetailsId: plan.purchaseDetailsId,
+        sortOrder: plan.sortOrder || 0, // 保留sort_order
         id: plan.id
       }));
       console.log('Loaded existing plans:', planFeedbackTemplate.value.length);

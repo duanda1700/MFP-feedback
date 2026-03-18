@@ -16,6 +16,9 @@ export declare class TaskService {
         pageSize: any;
     }>;
     getTaskDetail(id: string): Promise<Task>;
+    getTaskCount(query: any): Promise<{
+        count: number;
+    }>;
     private startTaskProcessor;
     private processTask;
     private processImportPlanTask;

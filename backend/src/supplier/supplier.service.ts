@@ -136,7 +136,8 @@ export class SupplierService {
     const [plans, total] = await queryBuilder
       .skip((page - 1) * pageSize)
       .take(pageSize)
-      .orderBy('plan.create_time', 'DESC')
+      .orderBy('plan.sort_order', 'ASC')
+      .addOrderBy('plan.create_time', 'DESC')
       .getManyAndCount();
 
     console.log(`Found ${plans.length} production plans, total: ${total}`);

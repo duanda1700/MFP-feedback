@@ -2,12 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProductionPlan } from '../database/entities/production-plan.entity';
+import { PurchaseOrder } from '../database/entities/purchase-order.entity';
+import { OperationLog } from '../database/entities/operation-log.entity';
 import { TaskService } from '../task/task.service';
 
 @Injectable()
 export class PlanService {
   constructor(
     @InjectRepository(ProductionPlan) private planRepository: Repository<ProductionPlan>,
+    @InjectRepository(PurchaseOrder) private orderRepository: Repository<PurchaseOrder>,
+    @InjectRepository(OperationLog) private operationLogRepository: Repository<OperationLog>,
     private taskService: TaskService,
   ) {}
 
@@ -81,19 +85,74 @@ export class PlanService {
   }
 
   // 导入计划
-  async importPlan(planDataList: any[], createdBy: number, createdName: string) {
-    // 创建异步任务
-    const task = await this.taskService.createTask(
-      'import-plan',
-      { planDataList },
-      createdBy,
-      createdName,
-    );
+  async importPlan(planDataList: any[], createdBy: number, createdName: string, orderId?: number) {
+    // 直接保存计划数据
+    let savedCount = 0;
+    
+    // 获取第一个计划的djbH，用于查询最大版本号
+    if (planDataList.length === 0) {
+      return {
+        success: false,
+        count: 0,
+        message: '没有计划数据需要导入',
+      };
+    }
+    
+    const djbH = planDataList[0].djbH;
+    
+    // 查询该订单的最大版本号
+    const maxVersionResult = await this.planRepository
+      .createQueryBuilder('plan')
+      .select('MAX(plan.version)', 'maxVersion')
+      .where('plan.djbH = :djbH', { djbH })
+      .getRawOne();
+    
+    const nextVersion = (maxVersionResult.maxVersion || 0) + 1;
+    console.log(`Importing plans for order ${djbH}, next version: ${nextVersion}`);
+    
+    for (const planData of planDataList) {
+      // 生成唯一ID
+      const timestamp = Date.now().toString().slice(-10);
+      const randomStr = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const id = `PP${timestamp}_${randomStr}`.slice(0, 16);
+      
+      const plan = this.planRepository.create({
+        id: id,
+        ...planData,
+        version: nextVersion, // 设置版本号
+        sortOrder: planData.sortOrder || 0 // 设置排序顺序
+      });
+      
+      await this.planRepository.save(plan);
+      savedCount++;
+    }
+
+    // 如果提供了orderId，更新订单状态为"已确认"
+    if (orderId) {
+      const order = await this.orderRepository.findOne({ where: { id: orderId } });
+      if (order) {
+        order.orderStatus = '已确认';
+        await this.orderRepository.save(order);
+        console.log(`Updated order ${orderId} status to "已确认"`);
+        
+        // 记录操作日志
+        const operationLog = this.operationLogRepository.create({
+          operationType: '生产计划确认',
+          operationDesc: `订单 ${order.djbH} 确认提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
+          operator: createdName,
+          operatedAt: new Date(),
+          relatedId: orderId.toString()
+        });
+        await this.operationLogRepository.save(operationLog);
+        console.log(`Recorded operation log for order ${orderId}`);
+      }
+    }
 
     return {
-      taskId: task.id,
-      taskStatus: task.taskStatus,
-      message: '计划导入任务已创建，正在处理中',
+      success: true,
+      count: savedCount,
+      version: nextVersion,
+      message: `成功导入 ${savedCount} 条生产计划，版本号: ${nextVersion}`,
     };
   }
 

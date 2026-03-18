@@ -25,6 +25,9 @@ let TaskController = class TaskController {
     async getTaskList(query) {
         return this.taskService.getTaskList(query);
     }
+    async getTaskCount(query) {
+        return this.taskService.getTaskCount(query);
+    }
     async getTaskDetail(id) {
         return this.taskService.getTaskDetail(id);
     }
@@ -44,6 +47,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TaskController.prototype, "getTaskList", null);
+__decorate([
+    (0, common_1.Get)('count'),
+    (0, permission_guard_1.RequirePermission)('task:read'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], TaskController.prototype, "getTaskCount", null);
 __decorate([
     (0, common_1.Get)('detail/:id'),
     (0, permission_guard_1.RequirePermission)('task:read'),

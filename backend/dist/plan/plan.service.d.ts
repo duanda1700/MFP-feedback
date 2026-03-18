@@ -1,10 +1,14 @@
 import { Repository } from 'typeorm';
 import { ProductionPlan } from '../database/entities/production-plan.entity';
+import { PurchaseOrder } from '../database/entities/purchase-order.entity';
+import { OperationLog } from '../database/entities/operation-log.entity';
 import { TaskService } from '../task/task.service';
 export declare class PlanService {
     private planRepository;
+    private orderRepository;
+    private operationLogRepository;
     private taskService;
-    constructor(planRepository: Repository<ProductionPlan>, taskService: TaskService);
+    constructor(planRepository: Repository<ProductionPlan>, orderRepository: Repository<PurchaseOrder>, operationLogRepository: Repository<OperationLog>, taskService: TaskService);
     getPlanList(query: any): Promise<{
         data: ProductionPlan[];
         total: number;
@@ -14,9 +18,15 @@ export declare class PlanService {
     getPlanDetail(id: string): Promise<ProductionPlan>;
     createPlan(planData: any): Promise<ProductionPlan[]>;
     updatePlan(id: string, planData: any): Promise<ProductionPlan>;
-    importPlan(planDataList: any[], createdBy: number, createdName: string): Promise<{
-        taskId: string;
-        taskStatus: string;
+    importPlan(planDataList: any[], createdBy: number, createdName: string, orderId?: number): Promise<{
+        success: boolean;
+        count: number;
+        message: string;
+        version?: undefined;
+    } | {
+        success: boolean;
+        count: number;
+        version: any;
         message: string;
     }>;
     submitApproval(id: string): Promise<ProductionPlan>;

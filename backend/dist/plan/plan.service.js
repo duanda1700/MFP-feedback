@@ -17,12 +17,18 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const production_plan_entity_1 = require("../database/entities/production-plan.entity");
+const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
+const operation_log_entity_1 = require("../database/entities/operation-log.entity");
 const task_service_1 = require("../task/task.service");
 let PlanService = class PlanService {
     planRepository;
+    orderRepository;
+    operationLogRepository;
     taskService;
-    constructor(planRepository, taskService) {
+    constructor(planRepository, orderRepository, operationLogRepository, taskService) {
         this.planRepository = planRepository;
+        this.orderRepository = orderRepository;
+        this.operationLogRepository = operationLogRepository;
         this.taskService = taskService;
     }
     async getPlanList(query) {
@@ -71,12 +77,58 @@ let PlanService = class PlanService {
         Object.assign(plan, planData);
         return this.planRepository.save(plan);
     }
-    async importPlan(planDataList, createdBy, createdName) {
-        const task = await this.taskService.createTask('import-plan', { planDataList }, createdBy, createdName);
+    async importPlan(planDataList, createdBy, createdName, orderId) {
+        let savedCount = 0;
+        if (planDataList.length === 0) {
+            return {
+                success: false,
+                count: 0,
+                message: '没有计划数据需要导入',
+            };
+        }
+        const djbH = planDataList[0].djbH;
+        const maxVersionResult = await this.planRepository
+            .createQueryBuilder('plan')
+            .select('MAX(plan.version)', 'maxVersion')
+            .where('plan.djbH = :djbH', { djbH })
+            .getRawOne();
+        const nextVersion = (maxVersionResult.maxVersion || 0) + 1;
+        console.log(`Importing plans for order ${djbH}, next version: ${nextVersion}`);
+        for (const planData of planDataList) {
+            const timestamp = Date.now().toString().slice(-10);
+            const randomStr = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            const id = `PP${timestamp}_${randomStr}`.slice(0, 16);
+            const plan = this.planRepository.create({
+                id: id,
+                ...planData,
+                version: nextVersion,
+                sortOrder: planData.sortOrder || 0
+            });
+            await this.planRepository.save(plan);
+            savedCount++;
+        }
+        if (orderId) {
+            const order = await this.orderRepository.findOne({ where: { id: orderId } });
+            if (order) {
+                order.orderStatus = '已确认';
+                await this.orderRepository.save(order);
+                console.log(`Updated order ${orderId} status to "已确认"`);
+                const operationLog = this.operationLogRepository.create({
+                    operationType: '生产计划确认',
+                    operationDesc: `订单 ${order.djbH} 确认提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
+                    operator: createdName,
+                    operatedAt: new Date(),
+                    relatedId: orderId.toString()
+                });
+                await this.operationLogRepository.save(operationLog);
+                console.log(`Recorded operation log for order ${orderId}`);
+            }
+        }
         return {
-            taskId: task.id,
-            taskStatus: task.taskStatus,
-            message: '计划导入任务已创建，正在处理中',
+            success: true,
+            count: savedCount,
+            version: nextVersion,
+            message: `成功导入 ${savedCount} 条生产计划，版本号: ${nextVersion}`,
         };
     }
     async submitApproval(id) {
@@ -138,7 +190,11 @@ exports.PlanService = PlanService;
 exports.PlanService = PlanService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(production_plan_entity_1.ProductionPlan)),
+    __param(1, (0, typeorm_1.InjectRepository)(purchase_order_entity_1.PurchaseOrder)),
+    __param(2, (0, typeorm_1.InjectRepository)(operation_log_entity_1.OperationLog)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         task_service_1.TaskService])
 ], PlanService);
 //# sourceMappingURL=plan.service.js.map
