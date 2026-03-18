@@ -265,10 +265,10 @@ const rules = {
 const issueFormRef = ref();
 
 // 数据
-const order = ref(null);
-const orderDetails = ref([]);
-const suppliers = ref([]);
-const planFeedbackTemplate = ref([]);
+const order = ref<any>(null);
+const orderDetails = ref<any[]>([]);
+const suppliers = ref<any[]>([]);
+const planFeedbackTemplate = ref<any[]>([]);
 const submitting = ref(false);
 const confirming = ref(false);
 
@@ -292,16 +292,16 @@ const paginatedPlanTemplate = computed(() => {
 });
 
 // 序号计算方法
-const indexMethod1 = (index) => {
+const indexMethod1 = (index: number) => {
   return (detailsCurrentPage.value - 1) * detailsPageSize.value + index + 1;
 };
 
-const indexMethod2 = (index) => {
+const indexMethod2 = (index: number) => {
   return (planCurrentPage.value - 1) * planPageSize.value + index + 1;
 };
 
 // 日期禁用函数
-const disabledDate = (time) => {
+const disabledDate = (time: Date) => {
   const now = new Date();
   const ninetyDaysLater = new Date();
   ninetyDaysLater.setDate(now.getDate() + 90);
@@ -309,7 +309,7 @@ const disabledDate = (time) => {
 };
 
 // 格式化日期
-const formatDate = (date) => {
+const formatDate = (date: any) => {
   if (!date) return '';
   const d = new Date(date);
   return d.toLocaleString('zh-CN');
@@ -321,7 +321,7 @@ const goBack = () => {
 };
 
 // 处理关键物料标记变更
-const handleKeyMaterialChange = async (row) => {
+const handleKeyMaterialChange = async (row: any) => {
   try {
     console.log('Updating key material for row:', row);
     // 调用后端API更新标记
@@ -340,7 +340,7 @@ const handleKeyMaterialChange = async (row) => {
 };
 
 // 处理制造符合性检查物料标记变更
-const handleComplianceMaterialChange = async (row) => {
+const handleComplianceMaterialChange = async (row: any) => {
   try {
     console.log('Updating compliance material for row:', row);
     // 调用后端API更新标记
@@ -362,15 +362,15 @@ const handleComplianceMaterialChange = async (row) => {
 const generateTemplate = async () => {
   try {
     // 首先获取采购订单明细，确保包含最新的标记信息
-    const orderResponse = await purchaseOrderApi.getDetail(orderId.value);
+    const orderResponse: any = await purchaseOrderApi.getDetail(orderId.value);
     const details = orderResponse.details || [];
     
     // 处理模板数据，按照采购订单明细的顺序生成计划
-    const templateItems = [];
+    const templateItems: any[] = [];
     
     // 遍历采购订单明细，按照顺序生成计划
     let sortOrder = 1; // 初始化sort_order计数器
-    details.forEach(detail => {
+    details.forEach((detail: any) => {
       console.log('Processing detail:', detail);
       console.log('isKeyMaterial:', detail.isKeyMaterial);
       console.log('isComplianceMaterial:', detail.isComplianceMaterial);
@@ -450,7 +450,7 @@ const tableRowClassName = ({ row }: { row: any }) => {
 };
 
 // 添加模板行
-const addTemplateItem = (index) => {
+const addTemplateItem = (index: number) => {
   // 获取当前行的purchaseDetailsId（如果存在）
   const currentRow = index > 0 ? planFeedbackTemplate.value[index - 1] : null;
   const purchaseDetailsId = currentRow?.purchaseDetailsId || 0;
@@ -476,7 +476,7 @@ const addTemplateItem = (index) => {
 };
 
 // 删除模板行
-const removeTemplateItem = (index) => {
+const removeTemplateItem = (index: number) => {
   planFeedbackTemplate.value.splice(index, 1);
 };
 
@@ -496,7 +496,7 @@ const submitIssue = async () => {
     }));
     
     // 提交请求
-    const response = await purchaseOrderApi.issueOrder({
+    await purchaseOrderApi.issueOrder({
       orderId: orderId.value,
       supplierId: issueForm.value.supplierId,
       issueDesc: issueForm.value.issueDesc,
@@ -578,7 +578,7 @@ const loadData = async () => {
   try {
     console.log('Loading data for order ID:', orderId.value);
     // 加载订单详情
-    const orderResponse = await purchaseOrderApi.getDetail(orderId.value);
+    const orderResponse: any = await purchaseOrderApi.getDetail(orderId.value);
     console.log('Order response:', orderResponse);
     order.value = orderResponse.order;
     orderDetails.value = orderResponse.details;
@@ -586,13 +586,13 @@ const loadData = async () => {
     console.log('Order details:', orderDetails.value);
     
     // 加载供应商列表
-    const suppliersResponse = await purchaseOrderApi.getSuppliers();
+    const suppliersResponse: any = await purchaseOrderApi.getSuppliers();
     console.log('Suppliers response:', suppliersResponse);
     suppliers.value = suppliersResponse;
     
     // 默认选择原供应商
-    if (order.value.supplierName) {
-      const defaultSupplier = suppliers.value.find(s => s.supplierName === order.value.supplierName);
+    if (order.value?.supplierName) {
+      const defaultSupplier = suppliers.value.find((s: any) => s.supplierName === order.value.supplierName);
       console.log('Default supplier:', defaultSupplier);
       if (defaultSupplier) {
         issueForm.value.supplierId = defaultSupplier.id;
@@ -620,7 +620,7 @@ const loadExistingPlans = async () => {
     
     if (response.data && response.data.length > 0) {
       // 如果有已生成的生产计划，直接显示
-      planFeedbackTemplate.value = response.data.map(plan => ({
+      planFeedbackTemplate.value = response.data.map((plan: any) => ({
         materialCode: plan.materialCode,
         materialDesc: plan.materialDesc,
         quantity: plan.quantity,

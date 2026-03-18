@@ -31,7 +31,7 @@ export const productionPlanApi = {
   create: (data: any) => request.post('/plan/create', data),
   update: (id: string, data: any) => request.put(`/plan/update/${id}`, data),
   delete: (id: string) => request.delete(`/plan/delete/${id}`),
-  import: (data: { plans: any[]; createdBy: number; createdName: string }) => request.post('/plan/import', data),
+  import: (data: any) => request.post('/plan/import', data),
   export: (params: any) => request.get('/plan/export', { params, responseType: 'blob' }),
   submitApproval: (id: string) => request.post(`/plan/submit-approval/${id}`)
 };

@@ -149,7 +149,6 @@ import { purchaseOrderApi } from '../api';
 
 const selectedOrder = ref<any>(null);
 const orderList = ref<any[]>([]);
-const detailsLoading = ref(false);
 const wideTableData = ref<any[]>([]);
 const wideTableLoading = ref(false);
 
@@ -301,7 +300,7 @@ const handleSearch = async () => {
       status: order.orderStatus || 'pending' // 使用订单状态
     }));
     
-    pagination.total = response.total || 0;
+    pagination.total = response.data?.total || 0;
     ElMessage.success('搜索成功');
   } catch (error) {
     console.error('Search purchase order error:', error);

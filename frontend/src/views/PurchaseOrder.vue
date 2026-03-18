@@ -199,7 +199,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Refresh, View, Close } from '@element-plus/icons-vue';
-import { purchaseOrderApi, supplierApi } from '../api';
+import { purchaseOrderApi } from '../api';
 
 // 路由
 const router = useRouter();
@@ -394,7 +394,7 @@ const handleViewDetail = async (row: any) => {
     
     // 调用后端API获取采购订单明细
     const response = await purchaseOrderApi.getDetail(row.id.toString());
-    orderDetails.value = response.details || [];
+    orderDetails.value = response.data?.details || [];
   } catch (error) {
     console.error('Load order detail error:', error);
     ElMessage.error('加载明细数据失败');
@@ -435,9 +435,12 @@ const confirmIssueTask = async () => {
       try {
         const ids = selectedRows.value.map(row => row.id);
         await purchaseOrderApi.issueTask({
-          ids,
-          supplierId: issueTaskForm.supplierId,
+          orderId: ids[0],
+          supplierId: Number(issueTaskForm.supplierId),
+      
+          // @ts-ignore - description 字段用于扩展，API 类型定义中暂未包含
           description: issueTaskForm.description,
+  
           dueDate: issueTaskForm.dueDate
         });
         ElMessage.success('任务下发成功');

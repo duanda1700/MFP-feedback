@@ -167,7 +167,7 @@ const handleOrderChange = () => {
 const loadProductionPlans = async () => {
   try {
     console.log('loadProductionPlans called, orderId:', searchForm.orderId);
-    const response = await purchaseOrderApi.getList({
+    const response: any = await purchaseOrderApi.getList({
       page: pagination.currentPage,
       pageSize: pagination.pageSize,
       orderStatus: searchForm.orderStatus,
