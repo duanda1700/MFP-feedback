@@ -25,6 +25,7 @@ export class OrderService {
       page = 1,
       pageSize = 10,
       orderStatus,
+      feedbackStatus,
       supplierName,
       startDate,
       endDate,
@@ -44,6 +45,15 @@ export class OrderService {
         queryBuilder.where('order.orderStatus = :orderStatus', { orderStatus: statusArray[0] });
       } else {
         queryBuilder.where('order.orderStatus IN (:...statusArray)', { statusArray });
+      }
+    }
+    if (feedbackStatus) {
+      // 支持多个反馈状态查询，用逗号分隔
+      const feedbackStatusArray = feedbackStatus.split(',').map((s: string) => s.trim());
+      if (!orderStatus) {
+        queryBuilder.where('order.feedbackStatus IN (:...feedbackStatusArray)', { feedbackStatusArray });
+      } else {
+        queryBuilder.andWhere('order.feedbackStatus IN (:...feedbackStatusArray)', { feedbackStatusArray });
       }
     }
     if (supplierName) {

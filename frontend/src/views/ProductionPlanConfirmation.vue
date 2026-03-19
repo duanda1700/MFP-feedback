@@ -60,11 +60,22 @@
           <el-table-column prop="major" label="专业" width="100" />
           <el-table-column prop="project" label="项目" width="180" />
           <el-table-column prop="supplierName" label="供应商" />
-          <el-table-column prop="orderStatus" label="订单状态" width="120">
+          <el-table-column prop="orderStatus" label="订单状态" width="150">
             <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.orderStatus)">
-                {{ scope.row.orderStatus }}
-              </el-tag>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <el-tag :type="getStatusType(scope.row.orderStatus)">
+                  {{ scope.row.orderStatus }}
+                </el-tag>
+                <el-badge 
+                  v-if="scope.row.orderStatus === '已下发'" 
+                  is-dot 
+                  class="pending-badge"
+                >
+                  <el-icon color="#E6A23C" :size="16">
+                    <WarningFilled />
+                  </el-icon>
+                </el-badge>
+              </div>
             </template>
           </el-table-column>
           <el-table-column prop="setCount" label="台份" width="100" />
@@ -103,7 +114,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { View } from '@element-plus/icons-vue';
+import { View, WarningFilled } from '@element-plus/icons-vue';
 import { purchaseOrderApi } from '../api';
 
 // 路由
@@ -264,6 +275,21 @@ onMounted(() => {
   margin-bottom: 20px;
   display: flex;
   gap: 10px;
+}
+
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .search-filter-container {

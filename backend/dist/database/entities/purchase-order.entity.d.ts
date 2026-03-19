@@ -17,6 +17,7 @@ export declare class PurchaseOrder {
     version: string;
     versionControlType: string;
     orderStatus: string;
+    feedbackStatus: string;
     setCount: string;
     supplierCode: string;
     supplierName: string;

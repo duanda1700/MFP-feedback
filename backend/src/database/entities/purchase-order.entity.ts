@@ -60,6 +60,17 @@ export class PurchaseOrder {
   @Index()
   orderStatus: string;
 
+  @Column({ 
+    name: 'feedback_status', 
+    type: 'varchar', 
+    length: 20, 
+    nullable: false, 
+    default: '未开始',
+    comment: '反馈状态：未开始、进行中、已完成、已延期'
+  })
+  @Index()
+  feedbackStatus: string;
+
   @Column({ name: 'set_count', type: 'varchar', length: 50, nullable: false })
   setCount: string;
 

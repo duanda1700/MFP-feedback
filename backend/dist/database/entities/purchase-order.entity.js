@@ -30,6 +30,7 @@ let PurchaseOrder = class PurchaseOrder {
     version;
     versionControlType;
     orderStatus;
+    feedbackStatus;
     setCount;
     supplierCode;
     supplierName;
@@ -114,6 +115,18 @@ __decorate([
     (0, typeorm_1.Index)(),
     __metadata("design:type", String)
 ], PurchaseOrder.prototype, "orderStatus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'feedback_status',
+        type: 'varchar',
+        length: 20,
+        nullable: false,
+        default: '未开始',
+        comment: '反馈状态：未开始、进行中、已完成、已延期'
+    }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", String)
+], PurchaseOrder.prototype, "feedbackStatus", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'set_count', type: 'varchar', length: 50, nullable: false }),
     __metadata("design:type", String)

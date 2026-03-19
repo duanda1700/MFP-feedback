@@ -38,7 +38,7 @@ let OrderService = class OrderService {
         this.operationLogRepository = operationLogRepository;
     }
     async getOrderList(query) {
-        const { page = 1, pageSize = 10, orderStatus, supplierName, startDate, endDate, djbH, project, setCount, applyUsername, applyDept, supplierId, } = query;
+        const { page = 1, pageSize = 10, orderStatus, feedbackStatus, supplierName, startDate, endDate, djbH, project, setCount, applyUsername, applyDept, supplierId, } = query;
         const queryBuilder = this.orderRepository.createQueryBuilder('order');
         if (orderStatus) {
             const statusArray = orderStatus.split(',').map((s) => s.trim());
@@ -47,6 +47,15 @@ let OrderService = class OrderService {
             }
             else {
                 queryBuilder.where('order.orderStatus IN (:...statusArray)', { statusArray });
+            }
+        }
+        if (feedbackStatus) {
+            const feedbackStatusArray = feedbackStatus.split(',').map((s) => s.trim());
+            if (!orderStatus) {
+                queryBuilder.where('order.feedbackStatus IN (:...feedbackStatusArray)', { feedbackStatusArray });
+            }
+            else {
+                queryBuilder.andWhere('order.feedbackStatus IN (:...feedbackStatusArray)', { feedbackStatusArray });
             }
         }
         if (supplierName) {
