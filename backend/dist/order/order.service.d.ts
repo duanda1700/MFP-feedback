@@ -50,9 +50,14 @@ export declare class OrderService {
     updateOrderStatus(id: number, status: string): Promise<PurchaseOrder>;
     getSupplierList(): Promise<Supplier[]>;
     generatePlanFeedbackTemplate(orderId: number): Promise<{
+        setCount: string;
+        drawingNo: string;
+        changeType: string;
+        sfzz: string;
         materialCode: string;
         materialDesc: string;
         quantity: number;
+        jhrq: Date;
         planDate: Date;
         isKeyMaterial: boolean;
         isComplianceMaterial: boolean;

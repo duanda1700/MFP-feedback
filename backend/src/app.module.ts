@@ -16,6 +16,8 @@ import { IntegrationModule } from './integration/integration.module';
 import { TaskModule } from './task/task.module';
 import { NotificationModule } from './notification/notification.module';
 import { SupplierModule } from './supplier/supplier.module';
+import { ExcelModule } from './excel/excel.module';
+import { OrderTrackingModule } from './order-tracking/order-tracking.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { SupplierModule } from './supplier/supplier.module';
     TaskModule,
     NotificationModule,
     SupplierModule,
+    ExcelModule,
+    OrderTrackingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

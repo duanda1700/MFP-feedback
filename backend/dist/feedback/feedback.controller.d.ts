@@ -1,35 +1,34 @@
 import { FeedbackService } from './feedback.service';
 export declare class FeedbackController {
-    private feedbackService;
+    private readonly feedbackService;
     constructor(feedbackService: FeedbackService);
     getFeedbackList(query: any): Promise<{
-        data: import("../database/entities/feedback-data.entity").FeedbackData[];
+        data: import("../database/entities/manufacture-plan-feedback-main.entity").ManufacturePlanFeedbackMain[];
         total: number;
         page: any;
         pageSize: any;
     }>;
-    getFeedbackDetail(id: number): Promise<import("../database/entities/feedback-data.entity").FeedbackData>;
-    submitFeedback(feedbackData: any): Promise<import("../database/entities/feedback-data.entity").FeedbackData[]>;
-    updateFeedbackStatus(id: number, body: {
-        status: number;
-    }): Promise<import("../database/entities/feedback-data.entity").FeedbackData>;
-    updateFeedback(id: number, feedbackData: any): Promise<import("../database/entities/feedback-data.entity").FeedbackData>;
-    checkOrderStatus(orderId: number): Promise<{
-        orderId: number;
-        status: string;
-        canSubmitFeedback: boolean;
+    getFeedbackDetail(id: string): Promise<import("../database/entities/manufacture-plan-feedback-main.entity").ManufacturePlanFeedbackMain>;
+    submitFeedback(feedbackData: any): Promise<{
+        success: boolean;
+        message: string;
     }>;
-    checkEditableRange(feedbackId: number, userId: number): Promise<{
-        feedbackId: number;
-        userId: number;
-        canEdit: boolean;
-        editableFields: string[];
+    getFeedbackStatistics(query: any): Promise<{
+        total: number;
+        completed: number;
+        inProgress: number;
+        delayed: number;
     }>;
-    getPurchaseMonitoring(): Promise<{
-        totalFeedbacks: number;
-        pendingFeedbacks: number;
-        overdueFeedbacks: number;
-        trend: number[];
+    getConfirmedPlans(query: any): Promise<{
+        data: import("../database/entities/production-plan.entity").ProductionPlan[];
+        total: number;
+        page: any;
+        pageSize: any;
     }>;
-    deleteFeedback(id: number): Promise<import("../database/entities/feedback-data.entity").FeedbackData>;
+    getConfirmedOrdersWithPlans(query: any): Promise<{
+        data: any[];
+        total: number;
+        page: any;
+        pageSize: any;
+    }>;
 }

@@ -314,9 +314,11 @@ let OrderService = class OrderService {
     async updateOrderStatus(id, status) {
         console.log(`Updating order status for id: ${id} to: ${status}`);
         const statusMap = {
-            'pending': '待处理',
-            'processing': '处理中',
-            'completed': '已完成'
+            'pending': '待下发',
+            'issued': '已下发',
+            'confirmed': '已确认',
+            'completed': '已完成',
+            'changed': '有变更'
         };
         const actualStatus = statusMap[status] || status;
         const order = await this.orderRepository.findOne({ where: { id } });
@@ -346,9 +348,14 @@ let OrderService = class OrderService {
         });
         console.log(`Found ${details.length} purchase details`);
         const template = details.map(detail => ({
+            setCount: detail.setCount,
+            drawingNo: detail.drawingNo,
+            changeType: detail.changeType,
+            sfzz: detail.sfzz,
             materialCode: detail.materialCode,
             materialDesc: detail.materialDesc,
             quantity: detail.quantity,
+            jhrq: detail.jhrq,
             planDate: detail.planDate,
             isKeyMaterial: detail.isKeyMaterial === '是',
             isComplianceMaterial: detail.isComplianceMaterial === '是',
@@ -414,6 +421,8 @@ let OrderService = class OrderService {
                     productionPlan = queryRunner.manager.create(production_plan_entity_1.ProductionPlan, {
                         id: id,
                         purchaseDetailsId: planItem.purchaseDetailsId || 0,
+                        setCount: planItem.setCount,
+                        drawingNo: planItem.drawingNo,
                         djbH: order.djbH,
                         planName: `计划反馈-${order.djbH}`,
                         planType: planItem.planType || '采购计划',
@@ -427,6 +436,9 @@ let OrderService = class OrderService {
                         quantity: planItem.quantity,
                         unit: planItem.unit || '个',
                         plannedDate: planItem.plannedDate || new Date(),
+                        jhrq: planItem.jhrq,
+                        changeType: planItem.changeType,
+                        sfzz: planItem.sfzz,
                         finishedQuantity: planItem.finishedQuantity || 0,
                         isKeyMaterial: planItem.isKeyMaterial,
                         productionLine: '',

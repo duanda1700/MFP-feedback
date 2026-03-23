@@ -9,6 +9,12 @@ export class ProductionPlan {
   @Index()
   purchaseDetailsId: number;
 
+  @Column({ name: 'set_count', type: 'varchar', length: 100, nullable: true })
+  setCount: string;
+
+  @Column({ name: 'drawing_no', type: 'varchar', length: 100, nullable: true })
+  drawingNo: string;
+
   @Column({ name: 'djbH', type: 'varchar', length: 100, nullable: true })
   @Index()
   djbH: string;
@@ -53,6 +59,15 @@ export class ProductionPlan {
   @Column({ name: 'planned_date', type: 'datetime', nullable: false })
   @Index()
   plannedDate: Date;
+
+  @Column({ name: 'jhrq', type: 'date', nullable: true })
+  jhrq: Date;
+
+  @Column({ name: 'change_type', type: 'varchar', length: 100, nullable: true })
+  changeType: string;
+
+  @Column({ name: 'sfzz', type: 'varchar', length: 100, nullable: true })
+  sfzz: string;
 
   @Column({ name: 'finished_quantity', type: 'decimal', precision: 18, scale: 6, nullable: false })
   finishedQuantity: number;

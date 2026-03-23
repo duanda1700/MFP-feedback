@@ -12,41 +12,41 @@
     <div class="overview-stats">
       <el-card shadow="hover" class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ totalOrders }}</div>
+          <div class="stat-number">{{ statistics.total }}</div>
           <div class="stat-label">总订单数</div>
         </div>
       </el-card>
       <el-card shadow="hover" class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ pendingOrders }}</div>
+          <div class="stat-number">{{ statistics.pending }}</div>
           <div class="stat-label">待处理</div>
         </div>
       </el-card>
       <el-card shadow="hover" class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ processingOrders }}</div>
+          <div class="stat-number">{{ statistics.processing }}</div>
           <div class="stat-label">处理中</div>
         </div>
       </el-card>
       <el-card shadow="hover" class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ completedOrders }}</div>
+          <div class="stat-number">{{ statistics.completed }}</div>
           <div class="stat-label">已完成</div>
         </div>
       </el-card>
     </div>
 
     <div class="status-sections">
-      <div class="status-section" v-if="pendingOrders > 0">
+      <div class="status-section" v-if="ordersByStatus.pending.length > 0">
         <div class="section-header">
           <h2 class="section-title">
             <i class="el-icon-time"></i> 待处理订单
-            <span class="order-count">{{ pendingOrders }}</span>
+            <span class="order-count">{{ ordersByStatus.pending.length }}</span>
           </h2>
         </div>
         <div class="order-cards">
           <el-card 
-            v-for="order in ordersByStatus['pending']" 
+            v-for="order in ordersByStatus.pending" 
             :key="order.id"
             shadow="hover"
             class="order-card"
@@ -61,35 +61,39 @@
             <div class="order-details">
               <div class="detail-item">
                 <label>采购经理:</label>
-                <span>{{ order.purchaseManager }}</span>
+                <span>{{ order.purchaseManager || '-' }}</span>
               </div>
               <div class="detail-item">
                 <label>供应商:</label>
-                <span>{{ order.supplierName }}</span>
+                <span>{{ order.supplierName || '-' }}</span>
               </div>
               <div class="detail-item">
                 <label>订单状态:</label>
                 <span>{{ order.orderStatus }}</span>
               </div>
+              <div class="detail-item">
+                <label>计划数:</label>
+                <span>{{ order.planCount || 0 }} 项</span>
+              </div>
             </div>
             <div class="order-actions">
-              <el-button size="small" @click="viewOrderDetail(order.id)">查看详情</el-button>
-              <el-button size="small" type="primary" @click="processOrder(order.id)">开始处理</el-button>
+              <el-button size="small" @click="viewOrderDetail(order)">查看详情</el-button>
+              <el-button size="small" type="primary" @click="viewOrderDetail(order)">开始处理</el-button>
             </div>
           </el-card>
         </div>
       </div>
 
-      <div class="status-section" v-if="processingOrders > 0">
+      <div class="status-section" v-if="ordersByStatus.processing.length > 0">
         <div class="section-header">
           <h2 class="section-title">
             <i class="el-icon-loading"></i> 处理中订单
-            <span class="order-count">{{ processingOrders }}</span>
+            <span class="order-count">{{ ordersByStatus.processing.length }}</span>
           </h2>
         </div>
         <div class="order-cards">
           <el-card 
-            v-for="order in ordersByStatus['processing']" 
+            v-for="order in ordersByStatus.processing" 
             :key="order.id"
             shadow="hover"
             class="order-card"
@@ -104,35 +108,40 @@
             <div class="order-details">
               <div class="detail-item">
                 <label>采购经理:</label>
-                <span>{{ order.purchaseManager }}</span>
+                <span>{{ order.purchaseManager || '-' }}</span>
               </div>
               <div class="detail-item">
                 <label>供应商:</label>
-                <span>{{ order.supplierName }}</span>
+                <span>{{ order.supplierName || '-' }}</span>
               </div>
               <div class="detail-item">
                 <label>订单状态:</label>
                 <span>{{ order.orderStatus }}</span>
               </div>
+              <div class="detail-item">
+                <label>反馈进度:</label>
+                <span>{{ order.feedbackProgress }}%</span>
+              </div>
             </div>
             <div class="order-actions">
-              <el-button size="small" @click="viewOrderDetail(order.id)">查看详情</el-button>
-              <el-button size="small" type="success" @click="completeOrder(order.id)">标记完成</el-button>
+              <el-button size="small" @click="viewOrderDetail(order)">查看详情</el-button>
+              <el-button size="small" type="warning" @click="openCompareDialog(order)">计划对比</el-button>
+              <el-button size="small" type="info" @click="openHistoryDialog(order)">历史反馈</el-button>
             </div>
           </el-card>
         </div>
       </div>
 
-      <div class="status-section" v-if="completedOrders > 0">
+      <div class="status-section" v-if="ordersByStatus.completed.length > 0">
         <div class="section-header">
           <h2 class="section-title">
             <i class="el-icon-check"></i> 已完成订单
-            <span class="order-count">{{ completedOrders }}</span>
+            <span class="order-count">{{ ordersByStatus.completed.length }}</span>
           </h2>
         </div>
         <div class="order-cards">
           <el-card 
-            v-for="order in ordersByStatus['completed']" 
+            v-for="order in ordersByStatus.completed" 
             :key="order.id"
             shadow="hover"
             class="order-card"
@@ -147,11 +156,11 @@
             <div class="order-details">
               <div class="detail-item">
                 <label>采购经理:</label>
-                <span>{{ order.purchaseManager }}</span>
+                <span>{{ order.purchaseManager || '-' }}</span>
               </div>
               <div class="detail-item">
                 <label>供应商:</label>
-                <span>{{ order.supplierName }}</span>
+                <span>{{ order.supplierName || '-' }}</span>
               </div>
               <div class="detail-item">
                 <label>订单状态:</label>
@@ -159,59 +168,287 @@
               </div>
             </div>
             <div class="order-actions">
-              <el-button size="small" @click="viewOrderDetail(order.id)">查看详情</el-button>
+              <el-button size="small" @click="viewOrderDetail(order)">查看详情</el-button>
+              <el-button size="small" type="info" @click="openHistoryDialog(order)">历史反馈</el-button>
             </div>
           </el-card>
         </div>
       </div>
 
-      <div v-if="totalOrders === 0" class="empty-state">
+      <div v-if="statistics.total === 0" class="empty-state">
         <el-empty description="暂无采购订单数据" />
       </div>
     </div>
+
+    <el-dialog 
+      v-model="detailDialogVisible" 
+      :title="`订单详情 - ${currentOrder?.djbH || ''}`"
+      width="90%"
+      top="5vh"
+    >
+      <div v-if="detailLoading" style="text-align: center; padding: 40px;">
+        <el-icon class="is-loading" :size="40"><Loading /></el-icon>
+        <p>加载中...</p>
+      </div>
+      <div v-else-if="orderDetail" class="detail-content">
+        <div class="detail-header">
+          <el-descriptions :column="4" border>
+            <el-descriptions-item label="订单编号">{{ orderDetail.order.djbH }}</el-descriptions-item>
+            <el-descriptions-item label="订单状态">
+              <el-tag :type="getStatusType(orderDetail.order.orderStatus)">{{ orderDetail.order.orderStatus }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="供应商">{{ orderDetail.order.supplierName || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="采购经理">{{ orderDetail.order.purchaseManager || '-' }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+        
+        <div class="detail-stats">
+          <el-row :gutter="16">
+            <el-col :span="4">
+              <el-statistic title="总计划数" :value="orderDetail.statistics.totalPlans" />
+            </el-col>
+            <el-col :span="4">
+              <el-statistic title="已完成" :value="orderDetail.statistics.completedPlans" />
+            </el-col>
+            <el-col :span="4">
+              <el-statistic title="进行中" :value="orderDetail.statistics.inProgressPlans" />
+            </el-col>
+            <el-col :span="4">
+              <el-statistic title="已延期" :value="orderDetail.statistics.delayedPlans" />
+            </el-col>
+            <el-col :span="4">
+              <el-statistic title="未开始" :value="orderDetail.statistics.notStartedPlans" />
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="detail-plans">
+          <h4>计划明细及反馈情况</h4>
+          <el-table :data="orderDetail.plans" border stripe max-height="400">
+            <el-table-column type="index" label="序号" width="60" />
+            <el-table-column prop="materialCode" label="物料编码" width="120" />
+            <el-table-column prop="materialDesc" label="物料描述" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="planClass" label="计划分类" width="120" />
+            <el-table-column prop="quantity" label="计划数量" width="100" />
+            <el-table-column prop="unit" label="单位" width="80" />
+            <el-table-column prop="plannedDate" label="计划交付日期" width="120">
+              <template #default="scope">
+                {{ formatDate(scope.row.plannedDate) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="feedbackStatus" label="反馈状态" width="100">
+              <template #default="scope">
+                <el-tag :type="getFeedbackStatusType(scope.row.feedbackStatus)" size="small">
+                  {{ scope.row.feedbackStatus }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="latestFeedback.finishedQuantity" label="完成数量" width="100" />
+            <el-table-column prop="latestFeedback.actualDeliveryDate" label="实际交付日期" width="120">
+              <template #default="scope">
+                {{ scope.row.latestFeedback?.actualDeliveryDate ? formatDate(scope.row.latestFeedback.actualDeliveryDate) : '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100" fixed="right">
+              <template #default="scope">
+                <el-button 
+                  v-if="scope.row.feedbackHistory && scope.row.feedbackHistory.length > 0"
+                  size="small" 
+                  type="primary" 
+                  link
+                  @click="showPlanHistory(scope.row)"
+                >
+                  查看历史
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+    </el-dialog>
+
+    <el-dialog 
+      v-model="compareDialogVisible" 
+      :title="`计划模板对比 - ${currentOrder?.djbH || ''}`"
+      width="90%"
+      top="5vh"
+    >
+      <div v-if="compareLoading" style="text-align: center; padding: 40px;">
+        <el-icon class="is-loading" :size="40"><Loading /></el-icon>
+        <p>加载中...</p>
+      </div>
+      <div v-else-if="compareData" class="compare-content">
+        <el-alert 
+          :title="`共 ${compareData.totalItems} 项计划，其中 ${compareData.changedItems} 项有变更`" 
+          type="info" 
+          show-icon 
+          style="margin-bottom: 16px;"
+        />
+        <el-table :data="compareData.comparison" border stripe max-height="500">
+          <el-table-column type="index" label="序号" width="60" />
+          <el-table-column prop="materialCode" label="物料编码" width="120" />
+          <el-table-column prop="materialDesc" label="物料描述" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="planClass" label="计划分类" width="120" />
+          <el-table-column label="版本" width="100">
+            <template #default="scope">
+              {{ scope.row.originalVersion }} → {{ scope.row.latestVersion }}
+            </template>
+          </el-table-column>
+          <el-table-column label="变更内容" min-width="200">
+            <template #default="scope">
+              <div v-if="scope.row.changes.hasChanges">
+                <div v-for="(change, idx) in scope.row.changes.fields" :key="idx" class="change-item">
+                  <span class="change-field">{{ getFieldName(change.field) }}:</span>
+                  <span class="change-old">{{ change.original || '-' }}</span>
+                  <span class="change-arrow">→</span>
+                  <span class="change-new">{{ change.latest || '-' }}</span>
+                </div>
+              </div>
+              <span v-else style="color: #67C23A;">无变更</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="80">
+            <template #default="scope">
+              <el-tag :type="scope.row.changes.hasChanges ? 'warning' : 'success'" size="small">
+                {{ scope.row.changes.hasChanges ? '已变更' : '无变更' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
+
+    <el-dialog 
+      v-model="historyDialogVisible" 
+      :title="`历史反馈记录 - ${currentOrder?.djbH || ''}`"
+      width="90%"
+      top="5vh"
+    >
+      <div v-if="historyLoading" style="text-align: center; padding: 40px;">
+        <el-icon class="is-loading" :size="40"><Loading /></el-icon>
+        <p>加载中...</p>
+      </div>
+      <div v-else-if="historyData" class="history-content">
+        <el-alert 
+          :title="`共 ${historyData.totalRecords} 条反馈记录`" 
+          type="info" 
+          show-icon 
+          style="margin-bottom: 16px;"
+        />
+        
+        <el-tabs v-if="Object.keys(historyData.groupedByCycle).length > 0">
+          <el-tab-pane 
+            v-for="(records, cycle) in historyData.groupedByCycle" 
+            :key="cycle" 
+            :label="`${cycle} (${records.length})`"
+          >
+            <el-table :data="records" border stripe max-height="400">
+              <el-table-column type="index" label="序号" width="60" />
+              <el-table-column prop="materialCode" label="物料编码" width="120" />
+              <el-table-column prop="materialDesc" label="物料描述" min-width="150" show-overflow-tooltip />
+              <el-table-column prop="planClass" label="计划分类" width="120" />
+              <el-table-column prop="progressStatus" label="进展状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="getFeedbackStatusType(scope.row.progressStatus)" size="small">
+                    {{ scope.row.progressStatus }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="finishedQuantity" label="完成数量" width="100" />
+              <el-table-column prop="planQuantity" label="计划数量" width="100" />
+              <el-table-column prop="actualDeliveryDate" label="实际交付日期" width="120">
+                <template #default="scope">
+                  {{ scope.row.actualDeliveryDate ? formatDate(scope.row.actualDeliveryDate) : '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="remarks" label="备注" min-width="150" show-overflow-tooltip />
+              <el-table-column prop="creator" label="填报人" width="100" />
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+        <el-empty v-else description="暂无历史反馈记录" />
+      </div>
+    </el-dialog>
+
+    <el-dialog 
+      v-model="planHistoryDialogVisible" 
+      title="计划反馈历史"
+      width="70%"
+    >
+      <el-table v-if="currentPlanHistory" :data="currentPlanHistory" border stripe>
+        <el-table-column prop="version" label="版本" width="80" />
+        <el-table-column prop="feedbackTime" label="反馈时间" width="160">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.feedbackTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="progressStatus" label="进展状态" width="100">
+          <template #default="scope">
+            <el-tag :type="getFeedbackStatusType(scope.row.progressStatus)" size="small">
+              {{ scope.row.progressStatus }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="finishedQuantity" label="完成数量" width="100" />
+        <el-table-column prop="actualDeliveryDate" label="实际交付日期" width="120">
+          <template #default="scope">
+            {{ scope.row.actualDeliveryDate ? formatDate(scope.row.actualDeliveryDate) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="remarks" label="备注" min-width="150" show-overflow-tooltip />
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { purchaseOrderApi } from '../api';
+import { Loading } from '@element-plus/icons-vue';
+import { orderTrackingApi } from '../api';
 
-const orders = ref<any[]>([]);
-const loading = ref(false);
-
-const ordersByStatus = computed(() => {
-  const grouped: any = {
-    pending: [],
-    processing: [],
-    completed: []
-  };
-
-  orders.value.forEach(order => {
-    switch (order.orderStatus) {
-      case '待处理':
-        grouped.pending.push(order);
-        break;
-      case '处理中':
-        grouped.processing.push(order);
-        break;
-      case '已完成':
-        grouped.completed.push(order);
-        break;
-      default:
-        grouped.pending.push(order);
-    }
-  });
-
-  return grouped;
+const ordersByStatus = ref<any>({
+  pending: [],
+  processing: [],
+  completed: []
 });
 
-const totalOrders = computed(() => orders.value.length);
-const pendingOrders = computed(() => ordersByStatus.value.pending.length);
-const processingOrders = computed(() => ordersByStatus.value.processing.length);
-const completedOrders = computed(() => ordersByStatus.value.completed.length);
+const statistics = ref({
+  total: 0,
+  pending: 0,
+  processing: 0,
+  completed: 0
+});
+
+const loading = ref(false);
+
+const detailDialogVisible = ref(false);
+const detailLoading = ref(false);
+const currentOrder = ref<any>(null);
+const orderDetail = ref<any>(null);
+
+const compareDialogVisible = ref(false);
+const compareLoading = ref(false);
+const compareData = ref<any>(null);
+
+const historyDialogVisible = ref(false);
+const historyLoading = ref(false);
+const historyData = ref<any>(null);
+
+const planHistoryDialogVisible = ref(false);
+const currentPlanHistory = ref<any[]>([]);
 
 const formatDate = (date: any) => {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+};
+
+const formatDateTime = (date: any) => {
   if (!date) return '-';
   const d = new Date(date);
   return d.toLocaleString('zh-CN', {
@@ -223,11 +460,46 @@ const formatDate = (date: any) => {
   });
 };
 
+const getStatusType = (status: string) => {
+  const typeMap: any = {
+    '待下发': 'info',
+    '已下发': 'warning',
+    '已确认': 'primary',
+    '已完成': 'success'
+  };
+  return typeMap[status] || 'info';
+};
+
+const getFeedbackStatusType = (status: string) => {
+  const typeMap: any = {
+    '未开始': 'info',
+    '进行中': 'warning',
+    '已完成': 'success',
+    '已延期': 'danger',
+    '已取消': 'info'
+  };
+  return typeMap[status] || 'info';
+};
+
+const getFieldName = (field: string) => {
+  const nameMap: any = {
+    quantity: '数量',
+    plannedDate: '计划交付日期',
+    materialDesc: '物料描述',
+    remarks: '备注'
+  };
+  return nameMap[field] || field;
+};
+
 const loadOrders = async () => {
   loading.value = true;
   try {
-    const response = await purchaseOrderApi.getList({});
-    orders.value = response.data || [];
+    const response: any = await orderTrackingApi.getOrders();
+    ordersByStatus.value = response || {
+      pending: [],
+      processing: [],
+      completed: []
+    };
   } catch (error) {
     ElMessage.error('加载订单数据失败');
     console.error('加载订单数据失败:', error);
@@ -236,38 +508,81 @@ const loadOrders = async () => {
   }
 };
 
+const loadStatistics = async () => {
+  try {
+    const response: any = await orderTrackingApi.getStatistics();
+    statistics.value = response || {
+      total: 0,
+      pending: 0,
+      processing: 0,
+      completed: 0
+    };
+  } catch (error) {
+    console.error('加载统计数据失败:', error);
+  }
+};
+
 const refreshData = () => {
   loadOrders();
+  loadStatistics();
 };
 
-const viewOrderDetail = (orderId: number) => {
-  ElMessage.info(`查看订单详情: ${orderId}`);
-};
-
-const processOrder = async (orderId: number) => {
+const viewOrderDetail = async (order: any) => {
+  currentOrder.value = order;
+  detailDialogVisible.value = true;
+  detailLoading.value = true;
+  
   try {
-    await purchaseOrderApi.updateStatus(orderId, 'processing');
-    ElMessage.success('订单状态已更新为处理中');
-    loadOrders();
+    const response: any = await orderTrackingApi.getDetail(order.djbH);
+    orderDetail.value = response;
   } catch (error) {
-    ElMessage.error('更新订单状态失败');
-    console.error('更新订单状态失败:', error);
+    ElMessage.error('加载订单详情失败');
+    console.error('加载订单详情失败:', error);
+  } finally {
+    detailLoading.value = false;
   }
 };
 
-const completeOrder = async (orderId: number) => {
+const openCompareDialog = async (order: any) => {
+  currentOrder.value = order;
+  compareDialogVisible.value = true;
+  compareLoading.value = true;
+  
   try {
-    await purchaseOrderApi.updateStatus(orderId, 'completed');
-    ElMessage.success('订单状态已更新为已完成');
-    loadOrders();
+    const response: any = await orderTrackingApi.comparePlans(order.djbH);
+    compareData.value = response;
   } catch (error) {
-    ElMessage.error('更新订单状态失败');
-    console.error('更新订单状态失败:', error);
+    ElMessage.error('加载计划对比数据失败');
+    console.error('加载计划对比数据失败:', error);
+  } finally {
+    compareLoading.value = false;
   }
+};
+
+const openHistoryDialog = async (order: any) => {
+  currentOrder.value = order;
+  historyDialogVisible.value = true;
+  historyLoading.value = true;
+  
+  try {
+    const response: any = await orderTrackingApi.getHistory(order.djbH);
+    historyData.value = response;
+  } catch (error) {
+    ElMessage.error('加载历史反馈数据失败');
+    console.error('加载历史反馈数据失败:', error);
+  } finally {
+    historyLoading.value = false;
+  }
+};
+
+const showPlanHistory = (plan: any) => {
+  currentPlanHistory.value = plan.feedbackHistory || [];
+  planHistoryDialogVisible.value = true;
 };
 
 onMounted(() => {
   loadOrders();
+  loadStatistics();
 });
 </script>
 
@@ -455,6 +770,7 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .empty-state {
@@ -465,6 +781,55 @@ onMounted(() => {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.detail-content {
+  padding: 0 10px;
+}
+
+.detail-header {
+  margin-bottom: 20px;
+}
+
+.detail-stats {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.detail-plans h4 {
+  margin-bottom: 12px;
+  color: #303133;
+}
+
+.compare-content,
+.history-content {
+  padding: 0 10px;
+}
+
+.change-item {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.change-field {
+  font-weight: 500;
+  color: #606266;
+  margin-right: 8px;
+}
+
+.change-old {
+  color: #F56C6C;
+}
+
+.change-arrow {
+  margin: 0 8px;
+  color: #909399;
+}
+
+.change-new {
+  color: #67C23A;
 }
 
 @media screen and (max-width: 768px) {

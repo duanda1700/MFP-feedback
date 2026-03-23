@@ -1,6 +1,8 @@
 export declare class ProductionPlan {
     id: string;
     purchaseDetailsId: number;
+    setCount: string;
+    drawingNo: string;
     djbH: string;
     planName: string;
     planType: string;
@@ -14,6 +16,9 @@ export declare class ProductionPlan {
     quantity: number;
     unit: string;
     plannedDate: Date;
+    jhrq: Date;
+    changeType: string;
+    sfzz: string;
     finishedQuantity: number;
     isKeyMaterial: string;
     productionLine: string;

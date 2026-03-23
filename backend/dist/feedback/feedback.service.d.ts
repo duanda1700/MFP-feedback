@@ -1,35 +1,44 @@
-import { Repository } from 'typeorm';
-import { FeedbackData } from '../database/entities/feedback-data.entity';
+import { Repository, DataSource } from 'typeorm';
+import { ManufacturePlanFeedbackMain } from '../database/entities/manufacture-plan-feedback-main.entity';
+import { ManufacturePlanFeedbackVersion } from '../database/entities/manufacture-plan-feedback-version.entity';
+import { ProductionPlan } from '../database/entities/production-plan.entity';
+import { PurchaseOrder } from '../database/entities/purchase-order.entity';
 export declare class FeedbackService {
-    private feedbackRepository;
-    constructor(feedbackRepository: Repository<FeedbackData>);
+    private feedbackMainRepository;
+    private feedbackVersionRepository;
+    private productionPlanRepository;
+    private purchaseOrderRepository;
+    private dataSource;
+    constructor(feedbackMainRepository: Repository<ManufacturePlanFeedbackMain>, feedbackVersionRepository: Repository<ManufacturePlanFeedbackVersion>, productionPlanRepository: Repository<ProductionPlan>, purchaseOrderRepository: Repository<PurchaseOrder>, dataSource: DataSource);
     getFeedbackList(query: any): Promise<{
-        data: FeedbackData[];
+        data: ManufacturePlanFeedbackMain[];
         total: number;
         page: any;
         pageSize: any;
     }>;
-    getFeedbackDetail(id: number): Promise<FeedbackData>;
-    submitFeedback(feedbackData: any): Promise<FeedbackData[]>;
-    updateFeedbackStatus(id: number, status: number): Promise<FeedbackData>;
-    updateFeedback(id: number, feedbackData: any): Promise<FeedbackData>;
-    checkOrderStatus(orderId: number): Promise<{
-        orderId: number;
-        status: string;
-        canSubmitFeedback: boolean;
+    updateExpiredStatus(): Promise<void>;
+    getFeedbackDetail(mainId: string): Promise<ManufacturePlanFeedbackMain>;
+    submitFeedback(feedbackData: any): Promise<{
+        success: boolean;
+        message: string;
     }>;
-    checkEditableRange(feedbackId: number, userId: number): Promise<{
-        feedbackId: number;
-        userId: number;
-        canEdit: boolean;
-        editableFields: string[];
+    getFeedbackStatistics(_query: any): Promise<{
+        total: number;
+        completed: number;
+        inProgress: number;
+        delayed: number;
     }>;
-    getPurchaseMonitoring(): Promise<{
-        totalFeedbacks: number;
-        pendingFeedbacks: number;
-        overdueFeedbacks: number;
-        trend: number[];
+    getConfirmedPlans(query: any): Promise<{
+        data: ProductionPlan[];
+        total: number;
+        page: any;
+        pageSize: any;
     }>;
-    realTimeSync(feedback: any): Promise<void>;
-    deleteFeedback(id: number): Promise<FeedbackData>;
+    getConfirmedOrdersWithPlans(query: any): Promise<{
+        data: any[];
+        total: number;
+        page: any;
+        pageSize: any;
+    }>;
+    private generateId;
 }

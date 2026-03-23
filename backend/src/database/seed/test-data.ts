@@ -113,7 +113,7 @@ async function seedTestData() {
           orderNo: `ORD${detailIndex}`,
           setCount: '1',
           supplierCode: `SUP${i}`,
-          detailStatus: ['待处理', '处理中', '已完成'][j % 3]
+          detailStatus: ['待处理', '已下发', '已完成'][j % 3]
         });
         await purchaseDetailsRepository.save(purchaseDetails);
         purchaseDetailsIds.push(id); // 存储采购详情ID
@@ -144,7 +144,7 @@ async function seedTestData() {
         unit: '个',
         plannedDate: new Date(),
         finishedQuantity: 0,
-        planStatus: ['待处理', '处理中', '已完成'][(i + 1) % 3],
+        planStatus: ['待确认', '已确认', '已完成'][(i + 1) % 3],
         materialCode: `MAT${i + 1}`,
         materialDesc: `物料${i + 1}`,
         isKeyMaterial: (i + 1) % 2 === 0 ? '是' : '否',

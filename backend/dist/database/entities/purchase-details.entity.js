@@ -35,6 +35,8 @@ let PurchaseDetails = class PurchaseDetails {
     updateTime;
     isKeyMaterial;
     isComplianceMaterial;
+    jhrq;
+    sfzz;
 };
 exports.PurchaseDetails = PurchaseDetails;
 __decorate([
@@ -133,6 +135,14 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'is_compliance_material', type: 'varchar', length: 2, nullable: true }),
     __metadata("design:type", String)
 ], PurchaseDetails.prototype, "isComplianceMaterial", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'jhrq', type: 'date', nullable: true }),
+    __metadata("design:type", Date)
+], PurchaseDetails.prototype, "jhrq", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'sfzz', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseDetails.prototype, "sfzz", void 0);
 exports.PurchaseDetails = PurchaseDetails = __decorate([
     (0, typeorm_1.Entity)('PURCHASE_DETAILS')
 ], PurchaseDetails);

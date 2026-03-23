@@ -25,6 +25,8 @@ const integration_module_1 = require("./integration/integration.module");
 const task_module_1 = require("./task/task.module");
 const notification_module_1 = require("./notification/notification.module");
 const supplier_module_1 = require("./supplier/supplier.module");
+const excel_module_1 = require("./excel/excel.module");
+const order_tracking_module_1 = require("./order-tracking/order-tracking.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -45,6 +47,8 @@ exports.AppModule = AppModule = __decorate([
             task_module_1.TaskModule,
             notification_module_1.NotificationModule,
             supplier_module_1.SupplierModule,
+            excel_module_1.ExcelModule,
+            order_tracking_module_1.OrderTrackingModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

@@ -14,6 +14,8 @@ const typeorm_1 = require("typeorm");
 let ProductionPlan = class ProductionPlan {
     id;
     purchaseDetailsId;
+    setCount;
+    drawingNo;
     djbH;
     planName;
     planType;
@@ -27,6 +29,9 @@ let ProductionPlan = class ProductionPlan {
     quantity;
     unit;
     plannedDate;
+    jhrq;
+    changeType;
+    sfzz;
     finishedQuantity;
     isKeyMaterial;
     productionLine;
@@ -46,6 +51,14 @@ __decorate([
     (0, typeorm_1.Index)(),
     __metadata("design:type", Number)
 ], ProductionPlan.prototype, "purchaseDetailsId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'set_count', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "setCount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'drawing_no', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "drawingNo", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'djbH', type: 'varchar', length: 100, nullable: true }),
     (0, typeorm_1.Index)(),
@@ -104,6 +117,18 @@ __decorate([
     (0, typeorm_1.Index)(),
     __metadata("design:type", Date)
 ], ProductionPlan.prototype, "plannedDate", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'jhrq', type: 'date', nullable: true }),
+    __metadata("design:type", Date)
+], ProductionPlan.prototype, "jhrq", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'change_type', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "changeType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'sfzz', type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", String)
+], ProductionPlan.prototype, "sfzz", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'finished_quantity', type: 'decimal', precision: 18, scale: 6, nullable: false }),
     __metadata("design:type", Number)

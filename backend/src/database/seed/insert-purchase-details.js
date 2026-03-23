@@ -68,7 +68,7 @@ async function insertPurchaseDetailsData() {
           `ORD${bpm_cgdd_instance_id}${i}`, // 订单编号
           '1', // 套数
           supplier_code, // 供应商编码
-          ['待处理', '处理中', '已完成'][i % 3] // 明细状态
+          ['待处理', '已下发', '已完成'][i % 3] // 明细状态
         ];
         
         await connection.execute(insertQuery, detailData);

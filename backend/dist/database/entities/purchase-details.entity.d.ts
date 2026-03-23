@@ -22,4 +22,6 @@ export declare class PurchaseDetails {
     updateTime: Date;
     isKeyMaterial: string;
     isComplianceMaterial: string;
+    jhrq: Date;
+    sfzz: string;
 }

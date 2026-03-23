@@ -9,18 +9,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeedbackModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const feedback_service_1 = require("./feedback.service");
 const feedback_controller_1 = require("./feedback.controller");
-const feedback_data_entity_1 = require("../database/entities/feedback-data.entity");
+const feedback_service_1 = require("./feedback.service");
+const manufacture_plan_feedback_main_entity_1 = require("../database/entities/manufacture-plan-feedback-main.entity");
+const manufacture_plan_feedback_version_entity_1 = require("../database/entities/manufacture-plan-feedback-version.entity");
+const production_plan_entity_1 = require("../database/entities/production-plan.entity");
+const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
 let FeedbackModule = class FeedbackModule {
 };
 exports.FeedbackModule = FeedbackModule;
 exports.FeedbackModule = FeedbackModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([feedback_data_entity_1.FeedbackData])],
-        providers: [feedback_service_1.FeedbackService],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                manufacture_plan_feedback_main_entity_1.ManufacturePlanFeedbackMain,
+                manufacture_plan_feedback_version_entity_1.ManufacturePlanFeedbackVersion,
+                production_plan_entity_1.ProductionPlan,
+                purchase_order_entity_1.PurchaseOrder,
+            ]),
+        ],
         controllers: [feedback_controller_1.FeedbackController],
-        exports: [feedback_service_1.FeedbackService],
+        providers: [feedback_service_1.FeedbackService],
     })
 ], FeedbackModule);
 //# sourceMappingURL=feedback.module.js.map

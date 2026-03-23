@@ -53,9 +53,14 @@ export declare class OrderController {
     }): Promise<import("../database/entities/purchase-order.entity").PurchaseOrder>;
     getSuppliers(): Promise<import("../database/entities/supplier.entity").Supplier[]>;
     generateTemplate(orderId: number): Promise<{
+        setCount: string;
+        drawingNo: string;
+        changeType: string;
+        sfzz: string;
         materialCode: string;
         materialDesc: string;
         quantity: number;
+        jhrq: Date;
         planDate: Date;
         isKeyMaterial: boolean;
         isComplianceMaterial: boolean;

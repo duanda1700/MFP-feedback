@@ -2,44 +2,35 @@
   <div class="progress-feedback-container">
     <h2>计划进度反馈管理</h2>
     
-    <!-- 顶部筛选栏 -->
     <div class="filter-section">
       <el-card shadow="hover">
         <el-form :inline="true" :model="searchForm" class="filter-form">
           <el-form-item label="订单编号">
             <el-input 
-              v-model="searchForm.orderNo" 
+              v-model="searchForm.djbH" 
               placeholder="请输入订单编号" 
               clearable
               @clear="handleSearch"
               @keyup.enter="handleSearch"
             />
           </el-form-item>
-          
-          <el-form-item label="反馈状态">
-            <el-select 
-              v-model="searchForm.feedbackStatus" 
+
+          <el-form-item label="订单状态">
+            <el-select
+              v-model="searchForm.statusFilter"
+              multiple
+              collapse-tags
+              collapse-tags-tooltip
               placeholder="请选择状态"
-              clearable
+              style="width: 280px"
               @change="handleSearch"
             >
               <el-option label="未开始" value="未开始" />
               <el-option label="进行中" value="进行中" />
               <el-option label="已完成" value="已完成" />
               <el-option label="已延期" value="已延期" />
+              <el-option label="已取消" value="已取消" />
             </el-select>
-          </el-form-item>
-          
-          <el-form-item label="时间范围">
-            <el-date-picker
-              v-model="searchForm.dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              @change="handleSearch"
-            />
           </el-form-item>
           
           <el-form-item>
@@ -52,11 +43,28 @@
               重置
             </el-button>
           </el-form-item>
+
+          <el-form-item>
+            <el-button type="success" @click="handleBatchExport" :disabled="selectedOrders.length === 0">
+              <el-icon><Download /></el-icon>
+              批量导出 ({{ selectedOrders.length }})
+            </el-button>
+            <el-button type="warning" @click="triggerBatchImport">
+              <el-icon><Upload /></el-icon>
+              批量导入
+            </el-button>
+            <input 
+              ref="batchImportInput" 
+              type="file" 
+              accept=".xlsx,.xls" 
+              style="display: none" 
+              @change="handleBatchImport"
+            />
+          </el-form-item>
         </el-form>
       </el-card>
     </div>
     
-    <!-- 底部统计区 -->
     <div class="statistics-section">
       <el-row :gutter="20">
         <el-col :xs="24" :sm="12" :md="6">
@@ -97,8 +105,8 @@
             <div class="stat-content">
               <el-icon :size="40" color="#F56C6C"><Warning /></el-icon>
               <div class="stat-info">
-                <div class="stat-value">{{ statistics.pending }}</div>
-                <div class="stat-label">待处理</div>
+                <div class="stat-value">{{ statistics.delayed }}</div>
+                <div class="stat-label">已延期</div>
               </div>
             </div>
           </el-card>
@@ -106,10 +114,9 @@
       </el-row>
     </div>
     
-    <!-- 订单列表区 -->
     <div class="order-list-section">
       <div v-if="orderList.length === 0" class="empty-state">
-        <el-empty description="暂无订单数据" />
+        <el-empty description="暂无已确认的采购订单" />
       </div>
       
       <div v-else class="order-cards">
@@ -120,32 +127,25 @@
           class="order-card"
           :class="{ 'expanded': expandedOrders.includes(order.id) }"
         >
-          <!-- 订单卡片头部 -->
           <div class="order-card-header" @click="toggleOrderExpand(order.id)">
             <div class="order-basic-info">
               <div class="order-title">
+                <el-checkbox 
+                  v-model="order.selected"
+                  @change="handleOrderSelect(order)"
+                  @click.stop
+                  style="margin-right: 10px;"
+                />
                 <el-tag :type="getFeedbackStatusType(order.feedbackStatus)" size="large">
                   {{ order.feedbackStatus }}
                 </el-tag>
                 <span class="order-no">{{ order.djbH }}</span>
               </div>
               <div class="order-meta">
-                <span><el-icon><User /></el-icon> {{ order.purchaseManager || '-' }}</span>
-                <span><el-icon><OfficeBuilding /></el-icon> {{ order.supplierName || '-' }}</span>
-                <span><el-icon><Folder /></el-icon> {{ order.project || '-' }}</span>
+                <span><el-icon><User /></el-icon> {{ order.applyUsername || '-' }}</span>
+                <span><el-icon><OfficeBuilding /></el-icon> {{ order.applyDept || '-' }}</span>
+                <span><el-icon><Document /></el-icon> {{ order.planCount || 0 }} 条生产计划</span>
               </div>
-            </div>
-            
-            <div class="order-progress">
-              <div class="progress-label">
-                <span>进度概览</span>
-                <span class="progress-text">{{ getOrderProgress(order).toFixed(0) }}%</span>
-              </div>
-              <el-progress 
-                :percentage="getOrderProgress(order)" 
-                :color="getProgressColor(order.feedbackStatus)"
-                :stroke-width="10"
-              />
             </div>
             
             <div class="order-actions">
@@ -157,72 +157,111 @@
             </div>
           </div>
           
-          <!-- 订单明细（展开后显示） -->
           <el-collapse-transition>
             <div v-show="expandedOrders.includes(order.id)" class="order-details">
               <el-divider />
               <div class="details-header">
                 <h4>生产计划明细</h4>
-                <el-button 
-                  type="primary" 
-                  size="small"
-                  @click="handleSubmitFeedback(order)"
-                  :loading="submitting"
-                >
-                  提交反馈
-                </el-button>
+                <div class="feedback-cycle-input">
+                  <span>反馈周期：</span>
+                  <el-input 
+                    v-model="order.feedbackCycle" 
+                    placeholder="如：2026W12"
+                    style="width: 150px;"
+                    size="small"
+                  />
+                  <el-button 
+                    type="primary" 
+                    size="small"
+                    @click="submitOrderFeedback(order)"
+                    :loading="order.submitting"
+                    style="margin-left: 10px;"
+                  >
+                    提交反馈
+                  </el-button>
+                </div>
               </div>
               
               <el-table 
                 :data="order.plans" 
                 style="width: 100%"
                 v-loading="loading"
+                border
               >
                 <el-table-column type="index" label="序号" width="60" />
-                <el-table-column prop="materialCode" label="物料图号" width="150" />
-                <el-table-column prop="materialDesc" label="物料名称" width="200" />
-                <el-table-column prop="quantity" label="数量" width="80" />
-                <el-table-column prop="planClass" label="计划分类" width="120" />
-                <el-table-column prop="planStatus" label="计划状态" width="120">
+                <el-table-column prop="setCount" label="台份" width="100">
+                  <template #default="scope">
+                    {{ scope.row.setCount || '-' }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="drawingNo" label="图号" width="120">
+                  <template #default="scope">
+                    {{ scope.row.drawingNo || '-' }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="materialCode" label="物料编码" width="120" />
+                <el-table-column prop="materialDesc" label="物料描述" width="150" />
+                <el-table-column prop="planClass" label="计划分类" width="140" />
+                <el-table-column prop="sfzz" label="是否自制" width="100">
+                  <template #default="scope">
+                    {{ scope.row.sfzz || '-' }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="quantity" label="计划数量" width="100">
+                  <template #default="scope">
+                    {{ Number(scope.row.quantity || 0).toFixed(2) }} {{ scope.row.unit }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="plannedDate" label="计划交付日期" width="120">
+                  <template #default="scope">
+                    {{ scope.row.plannedDate ? formatDateOnly(scope.row.plannedDate) : '-' }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="progressStatus" label="进展状态" width="120">
                   <template #default="scope">
                     <el-select 
-                      v-model="scope.row.planStatus" 
+                      v-model="scope.row.progressStatus" 
+                      placeholder="请选择"
                       size="small"
-                      @change="handlePlanStatusChange(scope.row, order)"
+                      style="width: 100%"
+                      @change="(val: string) => handleProgressStatusChange(val, scope.row)"
                     >
-                      <el-option label="待确认" value="待确认" />
-                      <el-option label="已确认" value="已确认" />
+                      <el-option label="未开始" value="未开始" />
                       <el-option label="进行中" value="进行中" />
                       <el-option label="已完成" value="已完成" />
+                      <el-option label="已延期" value="已延期" />
+                      <el-option label="已取消" value="已取消" />
                     </el-select>
                   </template>
                 </el-table-column>
-                <el-table-column prop="finishedQuantity" label="完成数量" width="120">
+                <el-table-column label="完成数量" width="120">
                   <template #default="scope">
                     <el-input-number 
                       v-model="scope.row.finishedQuantity" 
                       :min="0" 
                       :max="scope.row.quantity"
                       size="small"
-                      @change="handleFinishedQuantityChange(scope.row, order)"
+                      style="width: 100%"
                     />
                   </template>
                 </el-table-column>
-                <el-table-column label="进度" width="150">
+                <el-table-column label="实际交付日期" width="160">
                   <template #default="scope">
-                    <el-progress 
-                      :percentage="getPlanProgress(scope.row)" 
-                      :color="getProgressColor(scope.row.planStatus)"
+                    <el-date-picker 
+                      v-model="scope.row.actualDeliveryDate" 
+                      type="date"
+                      placeholder="选择日期"
+                      size="small"
+                      style="width: 100%"
                     />
                   </template>
                 </el-table-column>
-                <el-table-column prop="remarks" label="备注">
+                <el-table-column label="备注" min-width="150">
                   <template #default="scope">
                     <el-input 
                       v-model="scope.row.remarks" 
-                      size="small"
                       placeholder="请输入备注"
-                      @change="handleRemarksChange(scope.row, order)"
+                      size="small"
                     />
                   </template>
                 </el-table-column>
@@ -232,7 +271,6 @@
         </el-card>
       </div>
       
-      <!-- 分页 -->
       <div class="pagination-container" v-if="pagination.total > 0">
         <el-pagination
           v-model:current-page="pagination.currentPage"
@@ -260,19 +298,24 @@ import {
   Warning,
   User,
   OfficeBuilding,
-  Folder
+  Download,
+  Upload
 } from '@element-plus/icons-vue';
-import { purchaseOrderApi, supplierApi } from '../api';
+import { progressFeedbackApi } from '../api';
+import axios from 'axios';
 
 const loading = ref(false);
-const submitting = ref(false);
 const orderList = ref<any[]>([]);
 const expandedOrders = ref<number[]>([]);
+const batchImportInput = ref<HTMLInputElement | null>(null);
+
+const selectedOrders = computed(() => {
+  return orderList.value.filter(order => order.selected);
+});
 
 const searchForm = reactive({
-  orderNo: '',
-  feedbackStatus: '',
-  dateRange: null as any
+  djbH: '',
+  statusFilter: ['未开始', '进行中', '已延期', '已取消'] as string[]
 });
 
 const pagination = reactive({
@@ -281,13 +324,11 @@ const pagination = reactive({
   total: 0
 });
 
-const statistics = computed(() => {
-  const total = pagination.total;
-  const completed = orderList.value.filter(o => o.feedbackStatus === '已完成').length;
-  const inProgress = orderList.value.filter(o => o.feedbackStatus === '进行中').length;
-  const pending = orderList.value.filter(o => o.feedbackStatus === '未开始').length;
-  
-  return { total, completed, inProgress, pending };
+const statistics = ref({
+  total: 0,
+  completed: 0,
+  inProgress: 0,
+  delayed: 0
 });
 
 const getFeedbackStatusType = (status: string) => {
@@ -300,30 +341,30 @@ const getFeedbackStatusType = (status: string) => {
   return typeMap[status] || 'info';
 };
 
-const getProgressColor = (status: string) => {
-  const colorMap: Record<string, string> = {
-    '未开始': '#909399',
-    '进行中': '#E6A23C',
-    '已完成': '#67C23A',
-    '已延期': '#F56C6C',
-    '待确认': '#909399',
-    '已确认': '#409EFF'
-  };
-  return colorMap[status] || '#409EFF';
+const formatDateOnly = (date: string | Date) => {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
 };
 
-const getOrderProgress = (order: any) => {
-  if (!order.plans || order.plans.length === 0) return 0;
-  const totalProgress = order.plans.reduce((sum: number, plan: any) => {
-    return sum + getPlanProgress(plan);
-  }, 0);
-  return totalProgress / order.plans.length;
+const handleProgressStatusChange = (value: string, row: any) => {
+  if (value === '已完成') {
+    row.actualDeliveryDate = new Date();
+    row.finishedQuantity = row.quantity || 0;
+  }
 };
 
-const getPlanProgress = (plan: any) => {
-  if (!plan.quantity || plan.quantity === 0) return 0;
-  const finished = plan.finishedQuantity || 0;
-  return Math.min((finished / plan.quantity) * 100, 100);
+const getCurrentCycle = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+  const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+  return `${year}W${weekNumber.toString().padStart(2, '0')}`;
 };
 
 const toggleOrderExpand = async (orderId: number) => {
@@ -332,102 +373,80 @@ const toggleOrderExpand = async (orderId: number) => {
     expandedOrders.value.splice(index, 1);
   } else {
     expandedOrders.value.push(orderId);
-    const order = orderList.value.find(o => o.id === orderId);
-    if (order && !order.plans) {
-      await loadOrderPlans(order);
+  }
+};
+
+const submitOrderFeedback = async (order: any) => {
+  try {
+    if (!order.feedbackCycle) {
+      ElMessage.warning('请填写反馈周期');
+      return;
     }
-  }
-};
-
-const loadOrderPlans = async (order: any) => {
-  try {
-    loading.value = true;
-    const response: any = await supplierApi.getOrderPlans(order.id.toString(), {
-      page: 1,
-      pageSize: 100
-    });
-    order.plans = response.data || [];
-  } catch (error) {
-    console.error('Failed to load order plans:', error);
-    ElMessage.error('加载订单计划失败');
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handlePlanStatusChange = (plan: any, order: any) => {
-  console.log('Plan status changed:', plan);
-  updateOrderFeedbackStatus(order);
-};
-
-const handleFinishedQuantityChange = (plan: any, order: any) => {
-  console.log('Finished quantity changed:', plan);
-  updateOrderFeedbackStatus(order);
-};
-
-const handleRemarksChange = (plan: any, order: any) => {
-  console.log('Remarks changed:', plan);
-};
-
-const updateOrderFeedbackStatus = (order: any) => {
-  if (!order.plans || order.plans.length === 0) return;
-  
-  const allCompleted = order.plans.every((p: any) => p.planStatus === '已完成');
-  const anyInProgress = order.plans.some((p: any) => 
-    p.planStatus === '进行中' || p.planStatus === '已确认'
-  );
-  
-  if (allCompleted) {
-    order.feedbackStatus = '已完成';
-  } else if (anyInProgress) {
-    order.feedbackStatus = '进行中';
-  } else {
-    order.feedbackStatus = '未开始';
-  }
-};
-
-const handleSubmitFeedback = async (order: any) => {
-  try {
-    submitting.value = true;
     
-    const response: any = await purchaseOrderApi.updateOrder(order.id, {
-      feedbackStatus: order.feedbackStatus
+    order.submitting = true;
+    
+    const feedbackItems = order.plans.map((plan: any) => ({
+      productionPlanId: plan.id,
+      purchaseDetailsId: plan.purchaseDetailsId,
+      materialCode: plan.materialCode,
+      materialDesc: plan.materialDesc,
+      planQuantity: plan.quantity,
+      unit: plan.unit,
+      finishedQuantity: plan.finishedQuantity || 0,
+      defectQuantity: plan.defectQuantity || 0,
+      actualDeliveryDate: plan.actualDeliveryDate,
+      progressStatus: plan.progressStatus || '未开始',
+      remarks: plan.remarks || '',
+      supplierCode: order.supplierCode || 'SUPPLIER001'
+    }));
+    
+    await progressFeedbackApi.submit({
+      feedbackCycle: order.feedbackCycle,
+      feedbackItems,
+      creator: 'admin'
     });
     
     ElMessage.success('反馈提交成功');
-    await loadOrders();
+    
+    order.plans.forEach((plan: any) => {
+      plan.finishedQuantity = 0;
+      plan.defectQuantity = 0;
+      plan.actualDeliveryDate = null;
+      plan.remarks = '';
+    });
+    
+    await loadStatistics();
   } catch (error) {
     console.error('Failed to submit feedback:', error);
     ElMessage.error('反馈提交失败');
   } finally {
-    submitting.value = false;
+    order.submitting = false;
   }
 };
 
 const handleSearch = () => {
   pagination.currentPage = 1;
-  loadOrders();
+  loadOrderList();
 };
 
 const resetSearch = () => {
-  searchForm.orderNo = '';
-  searchForm.feedbackStatus = '';
-  searchForm.dateRange = null;
+  searchForm.djbH = '';
+  searchForm.statusFilter = ['未开始', '进行中', '已延期', '已取消'];
   pagination.currentPage = 1;
-  loadOrders();
+  loadOrderList();
 };
 
 const handleSizeChange = (val: number) => {
   pagination.pageSize = val;
-  loadOrders();
+  loadOrderList();
 };
 
 const handleCurrentChange = (val: number) => {
   pagination.currentPage = val;
-  loadOrders();
+  loadOrderList();
 };
 
-const loadOrders = async () => {
+const loadOrderList = async () => {
   try {
     loading.value = true;
     
@@ -436,35 +455,132 @@ const loadOrders = async () => {
       pageSize: pagination.pageSize
     };
     
-    if (searchForm.orderNo) {
-      params.djbH = searchForm.orderNo;
+    if (searchForm.djbH) {
+      params.djbH = searchForm.djbH;
     }
     
-    if (searchForm.feedbackStatus) {
-      params.feedbackStatus = searchForm.feedbackStatus;
+    if (searchForm.statusFilter && searchForm.statusFilter.length > 0) {
+      params.statusFilter = searchForm.statusFilter.join(',');
     }
     
-    if (searchForm.dateRange && searchForm.dateRange.length === 2) {
-      params.startDate = searchForm.dateRange[0];
-      params.endDate = searchForm.dateRange[1];
-    }
-    
-    const response: any = await purchaseOrderApi.getList(params);
+    const response: any = await progressFeedbackApi.getOrdersWithPlans(params);
     orderList.value = (response.data || []).map((order: any) => ({
       ...order,
-      plans: null
+      selected: false,
+      feedbackCycle: getCurrentCycle(),
+      submitting: false,
+      plans: order.plans.map((plan: any) => ({
+        ...plan,
+        finishedQuantity: plan.finishedQuantity || 0,
+        defectQuantity: plan.defectQuantity || 0,
+        actualDeliveryDate: plan.actualDeliveryDate || null,
+        progressStatus: plan.progressStatus || '未开始',
+        remarks: plan.remarks || ''
+      }))
     }));
     pagination.total = response.total || 0;
   } catch (error) {
-    console.error('Failed to load orders:', error);
+    console.error('Failed to load order list:', error);
     ElMessage.error('加载订单列表失败');
   } finally {
     loading.value = false;
   }
 };
 
+const loadStatistics = async () => {
+  try {
+    const response: any = await progressFeedbackApi.getStatistics({});
+    statistics.value = response;
+  } catch (error) {
+    console.error('Failed to load statistics:', error);
+  }
+};
+
+const handleOrderSelect = (_order: any) => {
+  // 复选框状态已通过v-model自动更新
+};
+
+const handleBatchExport = async () => {
+  if (selectedOrders.value.length === 0) {
+    ElMessage.warning('请选择要导出的订单');
+    return;
+  }
+  
+  try {
+    ElMessage.info('正在导出...');
+    
+    const djbHList = selectedOrders.value.map(order => order.djbH);
+    
+    const response = await axios.post('/api/excel/export/batch', { djbHList }, {
+      responseType: 'blob'
+    });
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `feedback_batch_${Date.now()}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    ElMessage.success('导出成功');
+  } catch (error) {
+    console.error('Batch export failed:', error);
+    ElMessage.error('批量导出失败');
+  }
+};
+
+const triggerBatchImport = () => {
+  if (batchImportInput.value) {
+    batchImportInput.value.click();
+  }
+};
+
+const handleBatchImport = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  
+  if (!file) return;
+  
+  try {
+    ElMessage.info('正在导入...');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('creator', 'admin');
+    
+    const response = await axios.post('/api/excel/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    const result = response.data;
+    
+    if (result.success > 0) {
+      ElMessage.success(`导入成功 ${result.success} 条记录`);
+    }
+    
+    if (result.failed > 0) {
+      ElMessage.warning(`${result.failed} 条记录导入失败，请查看错误信息`);
+      console.error('Import errors:', result.errors);
+    }
+    
+    await loadOrderList();
+    await loadStatistics();
+  } catch (error: any) {
+    console.error('Import failed:', error);
+    const errorMsg = error.response?.data?.message || '导入失败';
+    ElMessage.error(errorMsg);
+  } finally {
+    input.value = '';
+  }
+};
+
 onMounted(() => {
-  loadOrders();
+  loadOrderList();
+  loadStatistics();
 });
 </script>
 
@@ -482,7 +598,6 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* 筛选区域 */
 .filter-section {
   margin-bottom: 20px;
 }
@@ -493,14 +608,12 @@ onMounted(() => {
   gap: 10px;
 }
 
-/* 统计区域 */
 .statistics-section {
   margin-bottom: 20px;
 }
 
 .stat-card {
-  margin-bottom: 10px;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
 }
 
 .stat-card:hover {
@@ -510,7 +623,7 @@ onMounted(() => {
 .stat-content {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
 }
 
 .stat-info {
@@ -518,10 +631,9 @@ onMounted(() => {
 }
 
 .stat-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: bold;
   color: #303133;
-  line-height: 1.2;
 }
 
 .stat-label {
@@ -530,16 +642,13 @@ onMounted(() => {
   margin-top: 5px;
 }
 
-/* 订单列表区域 */
 .order-list-section {
-  min-height: 400px;
+  margin-top: 20px;
 }
 
 .empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
+  text-align: center;
+  padding: 40px 0;
 }
 
 .order-cards {
@@ -549,30 +658,18 @@ onMounted(() => {
 }
 
 .order-card {
-  transition: all 0.3s ease;
-  border-radius: 8px;
+  transition: all 0.3s;
 }
 
 .order-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.order-card.expanded {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-
-/* 订单卡片头部 */
 .order-card-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 15px;
+  align-items: center;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.order-card-header:hover {
-  background-color: #f5f7fa;
 }
 
 .order-basic-info {
@@ -582,13 +679,13 @@ onMounted(() => {
 .order-title {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .order-no {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: bold;
   color: #303133;
 }
 
@@ -605,32 +702,14 @@ onMounted(() => {
   gap: 5px;
 }
 
-.order-progress {
-  flex: 1;
-  max-width: 300px;
-  margin: 0 20px;
-}
-
-.progress-label {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #606266;
-}
-
-.progress-text {
-  font-weight: 600;
-  color: #409EFF;
-}
-
 .order-actions {
-  margin-left: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-/* 订单明细 */
 .order-details {
-  padding: 0 15px 15px;
+  padding-top: 10px;
 }
 
 .details-header {
@@ -646,67 +725,15 @@ onMounted(() => {
   font-size: 16px;
 }
 
-/* 分页 */
+.feedback-cycle-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .pagination-container {
   margin-top: 20px;
   display: flex;
   justify-content: center;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .progress-feedback-container {
-    padding: 10px;
-  }
-  
-  .filter-form {
-    flex-direction: column;
-  }
-  
-  .order-card-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .order-progress {
-    width: 100%;
-    max-width: none;
-    margin: 15px 0;
-  }
-  
-  .order-actions {
-    margin-left: 0;
-    margin-top: 10px;
-  }
-  
-  .order-meta {
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .stat-content {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-/* 动画效果 */
-.el-collapse-transition {
-  transition: all 0.3s ease;
-}
-
-.order-card {
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 </style>

@@ -40,8 +40,10 @@ export const productionPlanApi = {
 export const progressFeedbackApi = {
   getList: (params: any) => request.get('/feedback/list', { params }),
   getDetail: (id: string) => request.get(`/feedback/detail/${id}`),
-  update: (id: string, data: any) => request.put(`/feedback/update/${id}`, data),
-  submit: (data: any) => request.post('/feedback/submit', data)
+  submit: (data: any) => request.post('/feedback/submit', data),
+  getStatistics: (params: any) => request.get('/feedback/statistics', { params }),
+  getConfirmedPlans: (params: any) => request.get('/feedback/confirmed-plans', { params }),
+  getOrdersWithPlans: (params: any) => request.get('/feedback/orders-with-plans', { params })
 };
 
 // 待办任务相关API
@@ -78,7 +80,14 @@ export const supplierApi = {
   batchUpdatePlanStatus: (planIds: string[], status: string) => request.put('/supplier/production-plans/batch-status', { planIds, status })
 };
 
-// 导出单独的函数以便在组件中直接使用
+export const orderTrackingApi = {
+  getOrders: () => request.get('/order-tracking/orders'),
+  getStatistics: () => request.get('/order-tracking/statistics'),
+  getDetail: (djbH: string) => request.get(`/order-tracking/detail/${djbH}`),
+  comparePlans: (djbH: string) => request.get(`/order-tracking/compare/${djbH}`),
+  getHistory: (djbH: string) => request.get(`/order-tracking/history/${djbH}`)
+};
+
 export const getSupplierOrders = () => supplierApi.getOrders();
 export const getSupplierOrderDetails = (orderId: string) => supplierApi.getOrderDetails(orderId);
 export const getSupplierOrderPlans = (orderId: string, params: any) => supplierApi.getOrderPlans(orderId, params);

@@ -13,6 +13,8 @@ const purchase_order_task_entity_1 = require("./entities/purchase-order-task.ent
 const supplier_entity_1 = require("./entities/supplier.entity");
 const operation_log_entity_1 = require("./entities/operation-log.entity");
 const user_entity_1 = require("../auth/entities/user.entity");
+const manufacture_plan_feedback_main_entity_1 = require("./entities/manufacture-plan-feedback-main.entity");
+const manufacture_plan_feedback_version_entity_1 = require("./entities/manufacture-plan-feedback-version.entity");
 exports.databaseConfig = {
     type: 'mysql',
     host: 'localhost',
@@ -33,6 +35,8 @@ exports.databaseConfig = {
         supplier_entity_1.Supplier,
         operation_log_entity_1.OperationLog,
         user_entity_1.User,
+        manufacture_plan_feedback_main_entity_1.ManufacturePlanFeedbackMain,
+        manufacture_plan_feedback_version_entity_1.ManufacturePlanFeedbackVersion,
     ],
     synchronize: false,
     logging: true,

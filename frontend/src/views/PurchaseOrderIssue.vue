@@ -27,7 +27,7 @@
       </div>
 
       <!-- 右侧：下发信息编辑区 -->
-      <div class="right-section" v-if="!isFromConfirmation">
+      <div class="right-section">
         <h2>下发信息</h2>
         <el-form :model="issueForm" :rules="rules" ref="issueFormRef">
           <!-- 供应商选择 -->
@@ -79,10 +79,14 @@
           <el-table-column type="index" label="序号" width="60" :index="indexMethod1"></el-table-column>
           <el-table-column prop="materialCode" label="物料编码" width="180"></el-table-column>
           <el-table-column prop="materialDesc" label="物料描述" min-width="200"></el-table-column>
-          <el-table-column prop="quantity" label="数量" width="100"></el-table-column>
-          <el-table-column prop="planDate" label="计划日期" width="180">
+          <el-table-column prop="quantity" label="数量" width="100">
             <template #default="scope">
-              {{ formatDate(scope.row.planDate) }}
+              {{ Number(scope.row.quantity).toFixed(2) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="jhrq" label="交货日期" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.jhrq) }}
             </template>
           </el-table-column>
           <el-table-column prop="isKeyMaterial" label="关键物料" width="120">
@@ -105,8 +109,6 @@
               ></el-switch>
             </template>
           </el-table-column>
-          <el-table-column prop="supplierCode" label="供应商编码" width="120"></el-table-column>
-          <el-table-column prop="detailStatus" label="状态" width="100"></el-table-column>
         </el-table>
         <el-pagination
           v-model:current-page="detailsCurrentPage"
@@ -129,6 +131,11 @@
         </div>
         <el-table :data="paginatedPlanTemplate" style="width: 100%" border :row-class-name="tableRowClassName">
           <el-table-column type="index" label="序号" width="60" :index="indexMethod2"></el-table-column>
+          <el-table-column prop="setCount" label="台份" width="100">
+            <template #default="scope">
+              {{ scope.row.setCount || '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="planClass" label="计划分类" width="150">
             <template #default="scope">
               <el-select v-model="scope.row.planClass" placeholder="请选择">
@@ -143,13 +150,9 @@
               <el-input v-model="scope.row.planType" placeholder="请输入计划类型"></el-input>
             </template>
           </el-table-column>
-          <el-table-column prop="planStatus" label="计划状态" width="120">
+          <el-table-column prop="drawingNo" label="图号" width="120">
             <template #default="scope">
-              <el-select v-model="scope.row.planStatus" placeholder="请选择">
-                <el-option label="待反馈" value="待反馈"></el-option>
-                <el-option label="进行中" value="进行中"></el-option>
-                <el-option label="已完成" value="已完成"></el-option>
-              </el-select>
+              {{ scope.row.drawingNo || '-' }}
             </template>
           </el-table-column>
           <el-table-column prop="materialCode" label="物料编码" width="180">
@@ -164,7 +167,7 @@
           </el-table-column>
           <el-table-column prop="quantity" label="数量" width="100">
             <template #default="scope">
-              <el-input v-model.number="scope.row.quantity" type="number" placeholder="数量"></el-input>
+              {{ Number(scope.row.quantity || 0).toFixed(2) }}
             </template>
           </el-table-column>
           <el-table-column prop="unit" label="单位" width="80">
@@ -172,14 +175,28 @@
               <el-input v-model="scope.row.unit" placeholder="单位"></el-input>
             </template>
           </el-table-column>
+          <el-table-column prop="jhrq" label="交货日期" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.jhrq) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="changeType" label="变更类型" width="120">
+            <template #default="scope">
+              {{ scope.row.changeType || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="sfzz" label="是否自制" width="120">
+            <template #default="scope">
+              <el-select v-model="scope.row.sfzz" placeholder="请选择" clearable>
+                <el-option label="自制" value="自制"></el-option>
+                <el-option label="外采" value="外采"></el-option>
+                <el-option label="外委" value="外委"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
           <el-table-column prop="plannedDate" label="计划日期" width="180">
             <template #default="scope">
               <el-date-picker v-model="scope.row.plannedDate" type="date" placeholder="计划日期" style="width: 100%"></el-date-picker>
-            </template>
-          </el-table-column>
-          <el-table-column prop="finishedQuantity" label="完成数量" width="100">
-            <template #default="scope">
-              <el-input v-model.number="scope.row.finishedQuantity" type="number" placeholder="完成数量"></el-input>
             </template>
           </el-table-column>
           <el-table-column prop="remarks" label="备注" min-width="200">
@@ -312,7 +329,10 @@ const disabledDate = (time: Date) => {
 const formatDate = (date: any) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toLocaleString('zh-CN');
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 // 返回订单列表
@@ -377,15 +397,21 @@ const generateTemplate = async () => {
       
       // 1. 生成基础计划（生产计划）
       const baseItem = {
+        setCount: detail.setCount,
+        drawingNo: detail.drawingNo,
+        changeType: detail.changeType,
+        sfzz: detail.sfzz,
         materialCode: detail.materialCode,
         materialDesc: detail.materialDesc,
         quantity: detail.quantity,
+        jhrq: detail.jhrq,
         planClass: '生产计划', // 默认计划分类
         planType: '',
         planStatus: '待确认',
         unit: detail.unit || '',
         plannedDate: detail.planDate || '',
         finishedQuantity: 0,
+        isKeyMaterial: detail.isKeyMaterial,
         remarks: '',
         purchaseDetailsId: detail.id,
         sortOrder: sortOrder++ // 分配sort_order
@@ -396,15 +422,21 @@ const generateTemplate = async () => {
       if (detail.isKeyMaterial === '是') {
         console.log('Generating process plan for key material:', detail.materialCode);
         templateItems.push({
+          setCount: detail.setCount,
+          drawingNo: detail.drawingNo,
+          changeType: detail.changeType,
+          sfzz: detail.sfzz,
           materialCode: detail.materialCode,
           materialDesc: detail.materialDesc,
           quantity: detail.quantity,
+          jhrq: detail.jhrq,
           planClass: '工序计划',
           planType: '',
           planStatus: '待确认',
           unit: detail.unit || '',
           plannedDate: detail.planDate || '',
           finishedQuantity: 0,
+          isKeyMaterial: detail.isKeyMaterial,
           remarks: '',
           purchaseDetailsId: detail.id,
           sortOrder: sortOrder++ // 分配sort_order
@@ -415,15 +447,21 @@ const generateTemplate = async () => {
       if (detail.isComplianceMaterial === '是') {
         console.log('Generating compliance plan for material:', detail.materialCode);
         templateItems.push({
+          setCount: detail.setCount,
+          drawingNo: detail.drawingNo,
+          changeType: detail.changeType,
+          sfzz: detail.sfzz,
           materialCode: detail.materialCode,
           materialDesc: detail.materialDesc,
           quantity: detail.quantity,
+          jhrq: detail.jhrq,
           planClass: '制造符合性检查计划',
           planType: '',
           planStatus: '待确认',
           unit: detail.unit || '',
           plannedDate: detail.planDate || '',
           finishedQuantity: 0,
+          isKeyMaterial: detail.isKeyMaterial,
           remarks: '',
           purchaseDetailsId: detail.id,
           sortOrder: sortOrder++ // 分配sort_order
@@ -454,19 +492,35 @@ const addTemplateItem = (index: number) => {
   // 获取当前行的purchaseDetailsId（如果存在）
   const currentRow = index > 0 ? planFeedbackTemplate.value[index - 1] : null;
   const purchaseDetailsId = currentRow?.purchaseDetailsId || 0;
+  const jhrq = currentRow?.jhrq || null;
+  const setCount = currentRow?.setCount || '';
+  const drawingNo = currentRow?.drawingNo || '';
+  const changeType = currentRow?.changeType || '';
+  const sfzz = currentRow?.sfzz || '';
+  
+  // 计算当前最大的sortOrder值
+  const maxSortOrder = planFeedbackTemplate.value.reduce((max, item) => {
+    return Math.max(max, item.sortOrder || 0);
+  }, 0);
   
   const newItem = {
+    setCount: setCount,
+    drawingNo: drawingNo,
+    changeType: changeType,
+    sfzz: sfzz,
     planClass: '',
     planType: '',
     planStatus: '待确认',
     materialCode: '',
     materialDesc: '',
     quantity: 0,
+    jhrq: jhrq,
     unit: '',
     plannedDate: '',
     finishedQuantity: 0,
     remarks: '',
-    purchaseDetailsId: purchaseDetailsId // 继承当前行的purchaseDetailsId
+    purchaseDetailsId: purchaseDetailsId, // 继承当前行的purchaseDetailsId
+    sortOrder: maxSortOrder + 1 // 设置为最大值+1
   };
   if (index !== undefined) {
     planFeedbackTemplate.value.splice(index, 0, newItem);
@@ -528,6 +582,8 @@ const confirmSubmit = async () => {
     // 准备计划数据，状态统一设置为"已确认"
     const plans = planFeedbackTemplate.value.map(plan => ({
       purchaseDetailsId: plan.purchaseDetailsId || 0,
+      setCount: plan.setCount,
+      drawingNo: plan.drawingNo,
       djbH: order.value.djbH,
       planName: `计划反馈-${order.value.djbH}`,
       planType: plan.planType || '采购计划',
@@ -541,6 +597,9 @@ const confirmSubmit = async () => {
       quantity: plan.quantity,
       unit: plan.unit || '个',
       plannedDate: plan.plannedDate || new Date(),
+      jhrq: plan.jhrq,
+      changeType: plan.changeType,
+      sfzz: plan.sfzz,
       finishedQuantity: plan.finishedQuantity || 0,
       isKeyMaterial: plan.isKeyMaterial,
       productionLine: '',
@@ -638,9 +697,14 @@ const loadExistingPlans = async () => {
       
       // 如果有已生成的生产计划，直接显示
       planFeedbackTemplate.value = plans.map((plan: any) => ({
+        setCount: plan.setCount,
+        drawingNo: plan.drawingNo,
+        changeType: plan.changeType,
+        sfzz: plan.sfzz,
         materialCode: plan.materialCode,
         materialDesc: plan.materialDesc,
         quantity: plan.quantity,
+        jhrq: plan.jhrq,
         planClass: plan.planClass || '生产计划',
         planType: plan.planType || '',
         planStatus: plan.planStatus || '待确认',

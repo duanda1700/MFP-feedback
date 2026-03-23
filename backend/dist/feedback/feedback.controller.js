@@ -14,7 +14,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeedbackController = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
 const feedback_service_1 = require("./feedback.service");
 let FeedbackController = class FeedbackController {
     feedbackService;
@@ -22,36 +21,26 @@ let FeedbackController = class FeedbackController {
         this.feedbackService = feedbackService;
     }
     async getFeedbackList(query) {
-        return this.feedbackService.getFeedbackList(query);
+        return await this.feedbackService.getFeedbackList(query);
     }
     async getFeedbackDetail(id) {
-        return this.feedbackService.getFeedbackDetail(id);
+        return await this.feedbackService.getFeedbackDetail(id);
     }
     async submitFeedback(feedbackData) {
-        return this.feedbackService.submitFeedback(feedbackData);
+        return await this.feedbackService.submitFeedback(feedbackData);
     }
-    async updateFeedbackStatus(id, body) {
-        return this.feedbackService.updateFeedbackStatus(id, body.status);
+    async getFeedbackStatistics(query) {
+        return await this.feedbackService.getFeedbackStatistics(query);
     }
-    async updateFeedback(id, feedbackData) {
-        return this.feedbackService.updateFeedback(id, feedbackData);
+    async getConfirmedPlans(query) {
+        return await this.feedbackService.getConfirmedPlans(query);
     }
-    async checkOrderStatus(orderId) {
-        return this.feedbackService.checkOrderStatus(orderId);
-    }
-    async checkEditableRange(feedbackId, userId) {
-        return this.feedbackService.checkEditableRange(feedbackId, userId);
-    }
-    async getPurchaseMonitoring() {
-        return this.feedbackService.getPurchaseMonitoring();
-    }
-    async deleteFeedback(id) {
-        return this.feedbackService.deleteFeedback(id);
+    async getConfirmedOrdersWithPlans(query) {
+        return await this.feedbackService.getConfirmedOrdersWithPlans(query);
     }
 };
 exports.FeedbackController = FeedbackController;
 __decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Get)('list'),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -59,15 +48,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], FeedbackController.prototype, "getFeedbackList", null);
 __decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Get)('detail/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], FeedbackController.prototype, "getFeedbackDetail", null);
 __decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('submit'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -75,55 +62,26 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], FeedbackController.prototype, "submitFeedback", null);
 __decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.Put)('update-status/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    (0, common_1.Get)('statistics'),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], FeedbackController.prototype, "updateFeedbackStatus", null);
+], FeedbackController.prototype, "getFeedbackStatistics", null);
 __decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.Put)('update/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    (0, common_1.Get)('confirmed-plans'),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], FeedbackController.prototype, "updateFeedback", null);
+], FeedbackController.prototype, "getConfirmedPlans", null);
 __decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.Get)('order-status/:orderId'),
-    __param(0, (0, common_1.Param)('orderId')),
+    (0, common_1.Get)('orders-with-plans'),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], FeedbackController.prototype, "checkOrderStatus", null);
-__decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.Get)('editable-range/:feedbackId'),
-    __param(0, (0, common_1.Param)('feedbackId')),
-    __param(1, (0, common_1.Query)('userId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
-    __metadata("design:returntype", Promise)
-], FeedbackController.prototype, "checkEditableRange", null);
-__decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.Get)('purchase-monitoring'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], FeedbackController.prototype, "getPurchaseMonitoring", null);
-__decorate([
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
-    (0, common_1.Delete)('delete/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], FeedbackController.prototype, "deleteFeedback", null);
+], FeedbackController.prototype, "getConfirmedOrdersWithPlans", null);
 exports.FeedbackController = FeedbackController = __decorate([
     (0, common_1.Controller)('api/feedback'),
     __metadata("design:paramtypes", [feedback_service_1.FeedbackService])

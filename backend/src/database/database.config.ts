@@ -11,6 +11,8 @@ import { PurchaseOrderTask } from './entities/purchase-order-task.entity';
 import { Supplier } from './entities/supplier.entity';
 import { OperationLog } from './entities/operation-log.entity';
 import { User } from '../auth/entities/user.entity';
+import { ManufacturePlanFeedbackMain } from './entities/manufacture-plan-feedback-main.entity';
+import { ManufacturePlanFeedbackVersion } from './entities/manufacture-plan-feedback-version.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'mysql',
@@ -32,6 +34,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Supplier,
     OperationLog,
     User,
+    ManufacturePlanFeedbackMain,
+    ManufacturePlanFeedbackVersion,
   ],
   synchronize: false,
   logging: true,
