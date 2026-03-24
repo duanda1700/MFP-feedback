@@ -1,175 +1,217 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
+import { Role } from '../database/entities/role.entity';
+import { Permission } from '../database/entities/permission.entity';
 import { RolePermission } from '../database/entities/role-permission.entity';
+import { UserRole } from '../database/entities/user-role.entity';
 
 @Injectable()
 export class PermissionService {
   constructor(
+    @InjectRepository(Role) private roleRepository: Repository<Role>,
+    @InjectRepository(Permission) private permissionRepository: Repository<Permission>,
     @InjectRepository(RolePermission) private rolePermissionRepository: Repository<RolePermission>,
+    @InjectRepository(UserRole) private userRoleRepository: Repository<UserRole>,
   ) {}
 
-  // 预设权限列表
-  private predefinedPermissions = [
-    { id: 1, name: 'user:read', description: '查看用户' },
-    { id: 2, name: 'user:create', description: '创建用户' },
-    { id: 3, name: 'user:update', description: '更新用户' },
-    { id: 4, name: 'user:delete', description: '删除用户' },
-    { id: 5, name: 'order:read', description: '查看订单' },
-    { id: 6, name: 'order:create', description: '创建订单' },
-    { id: 7, name: 'order:update', description: '更新订单' },
-    { id: 8, name: 'order:delete', description: '删除订单' },
-    { id: 9, name: 'plan:read', description: '查看计划' },
-    { id: 10, name: 'plan:create', description: '创建计划' },
-    { id: 11, name: 'plan:update', description: '更新计划' },
-    { id: 12, name: 'plan:delete', description: '删除计划' },
-    { id: 13, name: 'feedback:read', description: '查看反馈' },
-    { id: 14, name: 'feedback:create', description: '创建反馈' },
-    { id: 15, name: 'feedback:update', description: '更新反馈' },
-    { id: 16, name: 'feedback:delete', description: '删除反馈' },
-    { id: 17, name: 'role:read', description: '查看角色' },
-    { id: 18, name: 'role:create', description: '创建角色' },
-    { id: 19, name: 'role:update', description: '更新角色' },
-    { id: 20, name: 'role:delete', description: '删除角色' },
-    { id: 21, name: 'permission:read', description: '查看权限' },
-    { id: 22, name: 'permission:assign', description: '分配权限' },
-    { id: 23, name: 'backup:manage', description: '管理备份' },
-    { id: 24, name: 'performance:manage', description: '管理性能' },
-  ];
-
-  // 预设角色列表
-  private predefinedRoles = [
-    { id: 1, name: 'admin', description: '管理员' },
-    { id: 2, name: 'purchase', description: '采购主管' },
-    { id: 3, name: 'supplier', description: '供应商' },
-    { id: 4, name: 'production', description: '生产计划员' },
-    { id: 5, name: 'quality', description: '质量检查员' },
-  ];
-
-  // 获取角色列表
   async getRoleList() {
-    // 这里应该从数据库获取角色列表
-    // 暂时返回预设角色
-    return this.predefinedRoles;
+    return this.roleRepository.find({
+      order: { sortOrder: 'ASC', id: 'ASC' },
+    });
   }
 
-  // 获取权限列表
-  async getPermissionList() {
-    // 这里应该从数据库获取权限列表
-    // 暂时返回预设权限
-    return this.predefinedPermissions;
-  }
-
-  // 创建/更新角色
-  async createOrUpdateRole(roleData: any) {
-    // 这里应该实现创建或更新角色的逻辑
-    // 暂时返回模拟数据
-    if (roleData.id) {
-      const existingRole = this.predefinedRoles.find(role => role.id === roleData.id);
-      if (existingRole) {
-        Object.assign(existingRole, roleData);
-        return existingRole;
-      }
-      throw new NotFoundException('Role not found');
-    } else {
-      const newRole = {
-        id: this.predefinedRoles.length + 1,
-        ...roleData,
-      };
-      this.predefinedRoles.push(newRole);
-      return newRole;
-    }
-  }
-
-  // 分配权限
-  async assignPermissions(roleId: number, permissionIds: number[]) {
-    // 这里应该实现分配权限的逻辑
-    // 暂时返回模拟数据
-    const role = this.predefinedRoles.find(r => r.id === roleId);
+  async getRoleById(id: number) {
+    const role = await this.roleRepository.findOne({ where: { id } });
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('角色不存在');
+    }
+    return role;
+  }
+
+  async createRole(data: { name: string; displayName: string; description?: string }) {
+    const existingRole = await this.roleRepository.findOne({ where: { name: data.name } });
+    if (existingRole) {
+      throw new BadRequestException('角色名称已存在');
     }
 
-    const assignedPermissions = this.predefinedPermissions.filter(p => permissionIds.includes(p.id));
+    const role = this.roleRepository.create({
+      name: data.name,
+      displayName: data.displayName,
+      description: data.description,
+      status: 1,
+      sortOrder: 0,
+    });
 
-    // 这里应该更新数据库中的角色权限关系
-    // 暂时返回模拟数据
+    return this.roleRepository.save(role);
+  }
+
+  async updateRole(id: number, data: { displayName?: string; description?: string; status?: number }) {
+    const role = await this.getRoleById(id);
+    
+    if (data.displayName) role.displayName = data.displayName;
+    if (data.description !== undefined) role.description = data.description;
+    if (data.status !== undefined) role.status = data.status;
+
+    return this.roleRepository.save(role);
+  }
+
+  async deleteRole(id: number) {
+    const role = await this.getRoleById(id);
+    
+    if (role.name === 'admin') {
+      throw new BadRequestException('不能删除管理员角色');
+    }
+
+    await this.rolePermissionRepository.delete({ roleId: id });
+    await this.userRoleRepository.delete({ roleId: id });
+    await this.roleRepository.remove(role);
+
+    return { message: '角色删除成功' };
+  }
+
+  async getPermissionList() {
+    return this.permissionRepository.find({
+      order: { module: 'ASC', sortOrder: 'ASC', id: 'ASC' },
+    });
+  }
+
+  async getPermissionsByModule() {
+    const permissions = await this.getPermissionList();
+    const moduleMap: Record<string, typeof permissions> = {};
+
+    for (const permission of permissions) {
+      if (!moduleMap[permission.module]) {
+        moduleMap[permission.module] = [];
+      }
+      moduleMap[permission.module].push(permission);
+    }
+
+    return moduleMap;
+  }
+
+  async getRolePermissions(roleId: number) {
+    const rolePermissions = await this.rolePermissionRepository.find({
+      where: { roleId },
+      relations: ['permission'],
+    });
+
+    return rolePermissions.map(rp => rp.permissionId);
+  }
+
+  async assignPermissions(roleId: number, permissionIds: number[], createdBy?: number) {
+    await this.getRoleById(roleId);
+
+    const permissions = await this.permissionRepository.find({
+      where: { id: In(permissionIds) },
+    });
+
+    if (permissions.length !== permissionIds.length) {
+      throw new BadRequestException('部分权限不存在');
+    }
+
+    await this.rolePermissionRepository.delete({ roleId });
+
+    const rolePermissions = permissionIds.map(permissionId => ({
+      roleId,
+      permissionId,
+      createdBy,
+    }));
+
+    await this.rolePermissionRepository.insert(rolePermissions);
+
     return {
       roleId,
-      roleName: role.name,
-      assignedPermissions,
-      message: 'Permissions assigned successfully',
+      assignedCount: permissionIds.length,
+      message: '权限分配成功',
     };
   }
 
-  // 检查用户是否有指定权限
-  async checkPermission(userId: number, permissionName: string) {
-    // 这里应该实现检查用户权限的逻辑
-    // 暂时返回模拟数据
-    // 管理员拥有所有权限
-    if (userId === 1) {
+  async getUserRoles(userId: number) {
+    const userRoles = await this.userRoleRepository.find({
+      where: { userId },
+      relations: ['role'],
+    });
+
+    return userRoles.map(ur => ur.role);
+  }
+
+  async getUserPermissions(userId: number) {
+    const userRoles = await this.userRoleRepository.find({
+      where: { userId },
+    });
+
+    if (userRoles.length === 0) {
+      return [];
+    }
+
+    const roleIds = userRoles.map(ur => ur.roleId);
+
+    const rolePermissions = await this.rolePermissionRepository.find({
+      where: { roleId: In(roleIds) },
+      relations: ['permission'],
+    });
+
+    const permissionCodes = new Set<string>();
+    for (const rp of rolePermissions) {
+      if (rp.permission) {
+        permissionCodes.add(rp.permission.code);
+      }
+    }
+
+    return Array.from(permissionCodes);
+  }
+
+  async checkPermission(userId: number, permissionCode: string): Promise<boolean> {
+    const permissions = await this.getUserPermissions(userId);
+    
+    if (permissions.includes('*')) {
       return true;
     }
 
-    // 暂时模拟权限检查
-    const userRoles = [1]; // 假设用户拥有管理员角色
-    const rolePermissions = {
-      1: ['*'], // 管理员拥有所有权限
-      2: ['order:read', 'order:create', 'order:update'], // 采购主管权限
-      3: ['feedback:read', 'feedback:create'], // 供应商权限
-      4: ['plan:read', 'plan:create', 'plan:update'], // 生产计划员权限
-      5: ['quality:read', 'quality:update'], // 质量检查员权限
+    return permissions.includes(permissionCode);
+  }
+
+  async assignUserRoles(userId: number, roleIds: number[], createdBy?: number) {
+    await this.userRoleRepository.delete({ userId });
+
+    if (roleIds.length === 0) {
+      return { message: '用户角色已清空' };
+    }
+
+    const roles = await this.roleRepository.find({
+      where: { id: In(roleIds) },
+    });
+
+    if (roles.length !== roleIds.length) {
+      throw new BadRequestException('部分角色不存在');
+    }
+
+    const userRoles = roleIds.map(roleId => ({
+      userId,
+      roleId,
+      createdBy,
+    }));
+
+    await this.userRoleRepository.insert(userRoles);
+
+    return {
+      userId,
+      assignedRoles: roles.map(r => r.displayName),
+      message: '用户角色分配成功',
     };
-
-    for (const roleId of userRoles) {
-      const permissions = rolePermissions[roleId];
-      if (permissions && (permissions.includes('*') || permissions.includes(permissionName))) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
-  // 获取用户角色
-  async getUserRoles(userId: number) {
-    // 这里应该实现获取用户角色的逻辑
-    // 暂时返回模拟数据
-    return [
-      { id: 1, name: 'admin', description: '管理员' },
-    ];
-  }
+  async getRoleWithPermissions(roleId: number) {
+    const role = await this.getRoleById(roleId);
+    const permissionIds = await this.getRolePermissions(roleId);
+    const permissions = await this.permissionRepository.find({
+      where: { id: In(permissionIds) },
+    });
 
-  // 获取角色权限
-  async getRolePermissions(roleId: number) {
-    // 这里应该实现获取角色权限的逻辑
-    // 暂时返回模拟数据
-    const role = this.predefinedRoles.find(r => r.id === roleId);
-    if (!role) {
-      throw new NotFoundException('Role not found');
-    }
-
-    const rolePermissionsMap = {
-      1: this.predefinedPermissions, // 管理员拥有所有权限
-      2: this.predefinedPermissions.filter(p => p.name.startsWith('order:')), // 采购主管权限
-      3: this.predefinedPermissions.filter(p => p.name.startsWith('feedback:')), // 供应商权限
-      4: this.predefinedPermissions.filter(p => p.name.startsWith('plan:')), // 生产计划员权限
-      5: this.predefinedPermissions.filter(p => p.name.startsWith('quality:')), // 质量检查员权限
+    return {
+      ...role,
+      permissions,
     };
-
-    return rolePermissionsMap[roleId] || [];
-  }
-
-  // 删除角色
-  async deleteRole(roleId: number) {
-    // 这里应该实现删除角色的逻辑
-    // 暂时返回模拟数据
-    const roleIndex = this.predefinedRoles.findIndex(role => role.id === roleId);
-    if (roleIndex === -1) {
-      throw new NotFoundException('Role not found');
-    }
-
-    this.predefinedRoles.splice(roleIndex, 1);
-    return { message: 'Role deleted successfully' };
   }
 }

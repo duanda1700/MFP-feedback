@@ -16,134 +16,190 @@ exports.PermissionService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const role_entity_1 = require("../database/entities/role.entity");
+const permission_entity_1 = require("../database/entities/permission.entity");
 const role_permission_entity_1 = require("../database/entities/role-permission.entity");
+const user_role_entity_1 = require("../database/entities/user-role.entity");
 let PermissionService = class PermissionService {
+    roleRepository;
+    permissionRepository;
     rolePermissionRepository;
-    constructor(rolePermissionRepository) {
+    userRoleRepository;
+    constructor(roleRepository, permissionRepository, rolePermissionRepository, userRoleRepository) {
+        this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
         this.rolePermissionRepository = rolePermissionRepository;
+        this.userRoleRepository = userRoleRepository;
     }
-    predefinedPermissions = [
-        { id: 1, name: 'user:read', description: '查看用户' },
-        { id: 2, name: 'user:create', description: '创建用户' },
-        { id: 3, name: 'user:update', description: '更新用户' },
-        { id: 4, name: 'user:delete', description: '删除用户' },
-        { id: 5, name: 'order:read', description: '查看订单' },
-        { id: 6, name: 'order:create', description: '创建订单' },
-        { id: 7, name: 'order:update', description: '更新订单' },
-        { id: 8, name: 'order:delete', description: '删除订单' },
-        { id: 9, name: 'plan:read', description: '查看计划' },
-        { id: 10, name: 'plan:create', description: '创建计划' },
-        { id: 11, name: 'plan:update', description: '更新计划' },
-        { id: 12, name: 'plan:delete', description: '删除计划' },
-        { id: 13, name: 'feedback:read', description: '查看反馈' },
-        { id: 14, name: 'feedback:create', description: '创建反馈' },
-        { id: 15, name: 'feedback:update', description: '更新反馈' },
-        { id: 16, name: 'feedback:delete', description: '删除反馈' },
-        { id: 17, name: 'role:read', description: '查看角色' },
-        { id: 18, name: 'role:create', description: '创建角色' },
-        { id: 19, name: 'role:update', description: '更新角色' },
-        { id: 20, name: 'role:delete', description: '删除角色' },
-        { id: 21, name: 'permission:read', description: '查看权限' },
-        { id: 22, name: 'permission:assign', description: '分配权限' },
-        { id: 23, name: 'backup:manage', description: '管理备份' },
-        { id: 24, name: 'performance:manage', description: '管理性能' },
-    ];
-    predefinedRoles = [
-        { id: 1, name: 'admin', description: '管理员' },
-        { id: 2, name: 'purchase', description: '采购主管' },
-        { id: 3, name: 'supplier', description: '供应商' },
-        { id: 4, name: 'production', description: '生产计划员' },
-        { id: 5, name: 'quality', description: '质量检查员' },
-    ];
     async getRoleList() {
-        return this.predefinedRoles;
+        return this.roleRepository.find({
+            order: { sortOrder: 'ASC', id: 'ASC' },
+        });
+    }
+    async getRoleById(id) {
+        const role = await this.roleRepository.findOne({ where: { id } });
+        if (!role) {
+            throw new common_1.NotFoundException('角色不存在');
+        }
+        return role;
+    }
+    async createRole(data) {
+        const existingRole = await this.roleRepository.findOne({ where: { name: data.name } });
+        if (existingRole) {
+            throw new common_1.BadRequestException('角色名称已存在');
+        }
+        const role = this.roleRepository.create({
+            name: data.name,
+            displayName: data.displayName,
+            description: data.description,
+            status: 1,
+            sortOrder: 0,
+        });
+        return this.roleRepository.save(role);
+    }
+    async updateRole(id, data) {
+        const role = await this.getRoleById(id);
+        if (data.displayName)
+            role.displayName = data.displayName;
+        if (data.description !== undefined)
+            role.description = data.description;
+        if (data.status !== undefined)
+            role.status = data.status;
+        return this.roleRepository.save(role);
+    }
+    async deleteRole(id) {
+        const role = await this.getRoleById(id);
+        if (role.name === 'admin') {
+            throw new common_1.BadRequestException('不能删除管理员角色');
+        }
+        await this.rolePermissionRepository.delete({ roleId: id });
+        await this.userRoleRepository.delete({ roleId: id });
+        await this.roleRepository.remove(role);
+        return { message: '角色删除成功' };
     }
     async getPermissionList() {
-        return this.predefinedPermissions;
+        return this.permissionRepository.find({
+            order: { module: 'ASC', sortOrder: 'ASC', id: 'ASC' },
+        });
     }
-    async createOrUpdateRole(roleData) {
-        if (roleData.id) {
-            const existingRole = this.predefinedRoles.find(role => role.id === roleData.id);
-            if (existingRole) {
-                Object.assign(existingRole, roleData);
-                return existingRole;
+    async getPermissionsByModule() {
+        const permissions = await this.getPermissionList();
+        const moduleMap = {};
+        for (const permission of permissions) {
+            if (!moduleMap[permission.module]) {
+                moduleMap[permission.module] = [];
             }
-            throw new common_1.NotFoundException('Role not found');
+            moduleMap[permission.module].push(permission);
         }
-        else {
-            const newRole = {
-                id: this.predefinedRoles.length + 1,
-                ...roleData,
-            };
-            this.predefinedRoles.push(newRole);
-            return newRole;
-        }
-    }
-    async assignPermissions(roleId, permissionIds) {
-        const role = this.predefinedRoles.find(r => r.id === roleId);
-        if (!role) {
-            throw new common_1.NotFoundException('Role not found');
-        }
-        const assignedPermissions = this.predefinedPermissions.filter(p => permissionIds.includes(p.id));
-        return {
-            roleId,
-            roleName: role.name,
-            assignedPermissions,
-            message: 'Permissions assigned successfully',
-        };
-    }
-    async checkPermission(userId, permissionName) {
-        if (userId === 1) {
-            return true;
-        }
-        const userRoles = [1];
-        const rolePermissions = {
-            1: ['*'],
-            2: ['order:read', 'order:create', 'order:update'],
-            3: ['feedback:read', 'feedback:create'],
-            4: ['plan:read', 'plan:create', 'plan:update'],
-            5: ['quality:read', 'quality:update'],
-        };
-        for (const roleId of userRoles) {
-            const permissions = rolePermissions[roleId];
-            if (permissions && (permissions.includes('*') || permissions.includes(permissionName))) {
-                return true;
-            }
-        }
-        return false;
-    }
-    async getUserRoles(userId) {
-        return [
-            { id: 1, name: 'admin', description: '管理员' },
-        ];
+        return moduleMap;
     }
     async getRolePermissions(roleId) {
-        const role = this.predefinedRoles.find(r => r.id === roleId);
-        if (!role) {
-            throw new common_1.NotFoundException('Role not found');
-        }
-        const rolePermissionsMap = {
-            1: this.predefinedPermissions,
-            2: this.predefinedPermissions.filter(p => p.name.startsWith('order:')),
-            3: this.predefinedPermissions.filter(p => p.name.startsWith('feedback:')),
-            4: this.predefinedPermissions.filter(p => p.name.startsWith('plan:')),
-            5: this.predefinedPermissions.filter(p => p.name.startsWith('quality:')),
-        };
-        return rolePermissionsMap[roleId] || [];
+        const rolePermissions = await this.rolePermissionRepository.find({
+            where: { roleId },
+            relations: ['permission'],
+        });
+        return rolePermissions.map(rp => rp.permissionId);
     }
-    async deleteRole(roleId) {
-        const roleIndex = this.predefinedRoles.findIndex(role => role.id === roleId);
-        if (roleIndex === -1) {
-            throw new common_1.NotFoundException('Role not found');
+    async assignPermissions(roleId, permissionIds, createdBy) {
+        await this.getRoleById(roleId);
+        const permissions = await this.permissionRepository.find({
+            where: { id: (0, typeorm_2.In)(permissionIds) },
+        });
+        if (permissions.length !== permissionIds.length) {
+            throw new common_1.BadRequestException('部分权限不存在');
         }
-        this.predefinedRoles.splice(roleIndex, 1);
-        return { message: 'Role deleted successfully' };
+        await this.rolePermissionRepository.delete({ roleId });
+        const rolePermissions = permissionIds.map(permissionId => ({
+            roleId,
+            permissionId,
+            createdBy,
+        }));
+        await this.rolePermissionRepository.insert(rolePermissions);
+        return {
+            roleId,
+            assignedCount: permissionIds.length,
+            message: '权限分配成功',
+        };
+    }
+    async getUserRoles(userId) {
+        const userRoles = await this.userRoleRepository.find({
+            where: { userId },
+            relations: ['role'],
+        });
+        return userRoles.map(ur => ur.role);
+    }
+    async getUserPermissions(userId) {
+        const userRoles = await this.userRoleRepository.find({
+            where: { userId },
+        });
+        if (userRoles.length === 0) {
+            return [];
+        }
+        const roleIds = userRoles.map(ur => ur.roleId);
+        const rolePermissions = await this.rolePermissionRepository.find({
+            where: { roleId: (0, typeorm_2.In)(roleIds) },
+            relations: ['permission'],
+        });
+        const permissionCodes = new Set();
+        for (const rp of rolePermissions) {
+            if (rp.permission) {
+                permissionCodes.add(rp.permission.code);
+            }
+        }
+        return Array.from(permissionCodes);
+    }
+    async checkPermission(userId, permissionCode) {
+        const permissions = await this.getUserPermissions(userId);
+        if (permissions.includes('*')) {
+            return true;
+        }
+        return permissions.includes(permissionCode);
+    }
+    async assignUserRoles(userId, roleIds, createdBy) {
+        await this.userRoleRepository.delete({ userId });
+        if (roleIds.length === 0) {
+            return { message: '用户角色已清空' };
+        }
+        const roles = await this.roleRepository.find({
+            where: { id: (0, typeorm_2.In)(roleIds) },
+        });
+        if (roles.length !== roleIds.length) {
+            throw new common_1.BadRequestException('部分角色不存在');
+        }
+        const userRoles = roleIds.map(roleId => ({
+            userId,
+            roleId,
+            createdBy,
+        }));
+        await this.userRoleRepository.insert(userRoles);
+        return {
+            userId,
+            assignedRoles: roles.map(r => r.displayName),
+            message: '用户角色分配成功',
+        };
+    }
+    async getRoleWithPermissions(roleId) {
+        const role = await this.getRoleById(roleId);
+        const permissionIds = await this.getRolePermissions(roleId);
+        const permissions = await this.permissionRepository.find({
+            where: { id: (0, typeorm_2.In)(permissionIds) },
+        });
+        return {
+            ...role,
+            permissions,
+        };
     }
 };
 exports.PermissionService = PermissionService;
 exports.PermissionService = PermissionService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(role_permission_entity_1.RolePermission)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(0, (0, typeorm_1.InjectRepository)(role_entity_1.Role)),
+    __param(1, (0, typeorm_1.InjectRepository)(permission_entity_1.Permission)),
+    __param(2, (0, typeorm_1.InjectRepository)(role_permission_entity_1.RolePermission)),
+    __param(3, (0, typeorm_1.InjectRepository)(user_role_entity_1.UserRole)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository])
 ], PermissionService);
 //# sourceMappingURL=permission.service.js.map

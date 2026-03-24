@@ -6,8 +6,10 @@ export declare class OrderTrackingController {
     getStatistics(): Promise<{
         total: number;
         pending: number;
-        processing: number;
+        confirmed: number;
+        inProgress: number;
         completed: number;
+        delayed: number;
     }>;
     getOrderDetail(djbH: string): Promise<{
         order: import("../database/entities/purchase-order.entity").PurchaseOrder;
@@ -25,11 +27,5 @@ export declare class OrderTrackingController {
         totalItems: number;
         changedItems: number;
         comparison: any[];
-    }>;
-    getFeedbackHistory(djbH: string): Promise<{
-        djbH: string;
-        totalRecords: number;
-        groupedByCycle: any;
-        allRecords: any[];
     }>;
 }

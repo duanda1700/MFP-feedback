@@ -10,6 +10,10 @@ export class ManufacturePlanFeedbackMain {
   @Index()
   purchaseDetailsId: string;
 
+  @Column({ name: 'production_plan_id', type: 'char', length: 16, nullable: true })
+  @Index()
+  productionPlanId: string;
+
   @Column({ name: 'set_count', type: 'varchar', length: 100, nullable: true })
   setCount: string;
 

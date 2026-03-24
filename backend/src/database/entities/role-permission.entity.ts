@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { Permission } from './permission.entity';
+import { Role } from './role.entity';
 
 @Entity('ROLE_PERMISSION')
 export class RolePermission {
@@ -13,9 +15,20 @@ export class RolePermission {
   @Index()
   permissionId: number;
 
+  @Column({ name: 'created_by', type: 'int', nullable: true })
+  createdBy: number;
+
   @CreateDateColumn({ name: 'create_time' })
   createTime: Date;
 
   @UpdateDateColumn({ name: 'update_time' })
   updateTime: Date;
+
+  @ManyToOne(() => Role)
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
+
+  @ManyToOne(() => Permission)
+  @JoinColumn({ name: 'permission_id' })
+  permission: Permission;
 }

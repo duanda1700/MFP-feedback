@@ -15,6 +15,7 @@ const manufacture_plan_feedback_version_entity_1 = require("./manufacture-plan-f
 let ManufacturePlanFeedbackMain = class ManufacturePlanFeedbackMain {
     id;
     purchaseDetailsId;
+    productionPlanId;
     setCount;
     drawingNo;
     sfzz;
@@ -50,6 +51,11 @@ __decorate([
     (0, typeorm_1.Index)(),
     __metadata("design:type", String)
 ], ManufacturePlanFeedbackMain.prototype, "purchaseDetailsId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'production_plan_id', type: 'char', length: 16, nullable: true }),
+    (0, typeorm_1.Index)(),
+    __metadata("design:type", String)
+], ManufacturePlanFeedbackMain.prototype, "productionPlanId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'set_count', type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", String)

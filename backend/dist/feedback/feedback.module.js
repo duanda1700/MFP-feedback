@@ -15,6 +15,7 @@ const manufacture_plan_feedback_main_entity_1 = require("../database/entities/ma
 const manufacture_plan_feedback_version_entity_1 = require("../database/entities/manufacture-plan-feedback-version.entity");
 const production_plan_entity_1 = require("../database/entities/production-plan.entity");
 const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
+const todo_task_module_1 = require("../todo/todo-task.module");
 let FeedbackModule = class FeedbackModule {
 };
 exports.FeedbackModule = FeedbackModule;
@@ -27,9 +28,11 @@ exports.FeedbackModule = FeedbackModule = __decorate([
                 production_plan_entity_1.ProductionPlan,
                 purchase_order_entity_1.PurchaseOrder,
             ]),
+            (0, common_1.forwardRef)(() => todo_task_module_1.TodoTaskModule),
         ],
         controllers: [feedback_controller_1.FeedbackController],
         providers: [feedback_service_1.FeedbackService],
+        exports: [feedback_service_1.FeedbackService],
     })
 ], FeedbackModule);
 //# sourceMappingURL=feedback.module.js.map

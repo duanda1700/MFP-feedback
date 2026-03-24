@@ -20,18 +20,21 @@ const manufacture_plan_feedback_main_entity_1 = require("../database/entities/ma
 const manufacture_plan_feedback_version_entity_1 = require("../database/entities/manufacture-plan-feedback-version.entity");
 const production_plan_entity_1 = require("../database/entities/production-plan.entity");
 const purchase_order_entity_1 = require("../database/entities/purchase-order.entity");
+const todo_task_service_1 = require("../todo/todo-task.service");
 let FeedbackService = class FeedbackService {
     feedbackMainRepository;
     feedbackVersionRepository;
     productionPlanRepository;
     purchaseOrderRepository;
     dataSource;
-    constructor(feedbackMainRepository, feedbackVersionRepository, productionPlanRepository, purchaseOrderRepository, dataSource) {
+    todoTaskService;
+    constructor(feedbackMainRepository, feedbackVersionRepository, productionPlanRepository, purchaseOrderRepository, dataSource, todoTaskService) {
         this.feedbackMainRepository = feedbackMainRepository;
         this.feedbackVersionRepository = feedbackVersionRepository;
         this.productionPlanRepository = productionPlanRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.dataSource = dataSource;
+        this.todoTaskService = todoTaskService;
     }
     async getFeedbackList(query) {
         const { page = 1, pageSize = 10, djbH, materialCode, feedbackStatus, feedbackCycle, supplierCode, } = query;
@@ -110,15 +113,14 @@ let FeedbackService = class FeedbackService {
                 const purchaseDetailsIdStr = productionPlan.purchaseDetailsId.toString();
                 const materialCode = productionPlan.materialCode;
                 const planClass = productionPlan.planClass;
-                const uniqueKey = `${purchaseDetailsIdStr}_${materialCode}_${planClass}`;
+                const productionPlanId = item.productionPlanId;
+                const uniqueKey = productionPlanId;
                 if (mainRecordMap.has(uniqueKey)) {
                     continue;
                 }
                 let mainRecord = await queryRunner.manager.findOne(manufacture_plan_feedback_main_entity_1.ManufacturePlanFeedbackMain, {
                     where: {
-                        purchaseDetailsId: purchaseDetailsIdStr,
-                        materialCode: materialCode,
-                        planClass: planClass,
+                        productionPlanId: productionPlanId,
                         feedbackCycle,
                     },
                 });
@@ -126,6 +128,7 @@ let FeedbackService = class FeedbackService {
                     mainRecord = queryRunner.manager.create(manufacture_plan_feedback_main_entity_1.ManufacturePlanFeedbackMain, {
                         id: this.generateId(),
                         purchaseDetailsId: purchaseDetailsIdStr,
+                        productionPlanId: productionPlanId,
                         setCount: productionPlan.setCount,
                         drawingNo: productionPlan.drawingNo,
                         sfzz: productionPlan.sfzz,
@@ -167,10 +170,8 @@ let FeedbackService = class FeedbackService {
                 if (!productionPlan) {
                     continue;
                 }
-                const purchaseDetailsIdStr = productionPlan.purchaseDetailsId.toString();
-                const materialCode = productionPlan.materialCode;
-                const planClass = productionPlan.planClass;
-                const uniqueKey = `${purchaseDetailsIdStr}_${materialCode}_${planClass}`;
+                const productionPlanId = item.productionPlanId;
+                const uniqueKey = productionPlanId;
                 const recordData = mainRecordMap.get(uniqueKey);
                 if (!recordData) {
                     continue;
@@ -205,7 +206,7 @@ let FeedbackService = class FeedbackService {
                 const versionRecord = queryRunner.manager.create(manufacture_plan_feedback_version_entity_1.ManufacturePlanFeedbackVersion, {
                     id: this.generateId(),
                     mainId: mainRecord.id,
-                    purchaseDetailsId: purchaseDetailsIdStr,
+                    purchaseDetailsId: productionPlan.purchaseDetailsId?.toString(),
                     setCount: productionPlan.setCount,
                     drawingNo: productionPlan.drawingNo,
                     sfzz: productionPlan.sfzz,
@@ -223,7 +224,7 @@ let FeedbackService = class FeedbackService {
                 });
                 await queryRunner.manager.save(versionRecord);
             }
-            for (const [purchaseDetailsIdStr, { mainRecord, newVersion, finishedQuantity, planQuantity, plannedDate, progressStatus }] of mainRecordMap) {
+            for (const [productionPlanId, { mainRecord, newVersion, finishedQuantity, planQuantity, plannedDate, progressStatus }] of mainRecordMap) {
                 mainRecord.latestVersion = newVersion;
                 mainRecord.updateTime = new Date();
                 const now = new Date();
@@ -273,8 +274,22 @@ let FeedbackService = class FeedbackService {
                 else if (allStatuses.some((s) => s === '已延期')) {
                     orderFeedbackStatus = '已延期';
                 }
-                await queryRunner.manager.update(purchase_order_entity_1.PurchaseOrder, { djbH }, { feedbackStatus: orderFeedbackStatus });
-                console.log(`Updated order ${djbH} feedback status to ${orderFeedbackStatus}`);
+                const order = await queryRunner.manager.findOne(purchase_order_entity_1.PurchaseOrder, {
+                    where: { djbH },
+                });
+                if (order) {
+                    if (order.orderStatus === '已确认') {
+                        await queryRunner.manager.update(purchase_order_entity_1.PurchaseOrder, { djbH }, {
+                            feedbackStatus: orderFeedbackStatus,
+                            orderStatus: '进行中'
+                        });
+                        console.log(`Updated order ${djbH} status from "已确认" to "进行中", feedback status to ${orderFeedbackStatus}`);
+                    }
+                    else {
+                        await queryRunner.manager.update(purchase_order_entity_1.PurchaseOrder, { djbH }, { feedbackStatus: orderFeedbackStatus });
+                        console.log(`Updated order ${djbH} feedback status to ${orderFeedbackStatus}`);
+                    }
+                }
             }
             await queryRunner.commitTransaction();
             return { success: true, message: '反馈提交成功' };
@@ -291,21 +306,21 @@ let FeedbackService = class FeedbackService {
         const orderRepo = this.dataSource.getRepository('PurchaseOrder');
         const total = await orderRepo
             .createQueryBuilder('order')
-            .where('order.orderStatus = :status', { status: '已确认' })
+            .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
             .getCount();
         const completed = await orderRepo
             .createQueryBuilder('order')
-            .where('order.orderStatus = :status', { status: '已确认' })
+            .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
             .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '已完成' })
             .getCount();
         const inProgress = await orderRepo
             .createQueryBuilder('order')
-            .where('order.orderStatus = :status', { status: '已确认' })
+            .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
             .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '进行中' })
             .getCount();
         const delayed = await orderRepo
             .createQueryBuilder('order')
-            .where('order.orderStatus = :status', { status: '已确认' })
+            .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
             .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '已延期' })
             .getCount();
         return { total, completed, inProgress, delayed };
@@ -335,7 +350,7 @@ let FeedbackService = class FeedbackService {
         const orderRepo = this.dataSource.getRepository('PurchaseOrder');
         const queryBuilder = orderRepo
             .createQueryBuilder('order')
-            .where('order.orderStatus = :status', { status: '已确认' });
+            .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] });
         if (djbH) {
             queryBuilder.andWhere('order.djbH LIKE :djbH', { djbH: `%${djbH}%` });
         }
@@ -357,20 +372,11 @@ let FeedbackService = class FeedbackService {
                 .orderBy('plan.sortOrder', 'ASC')
                 .addOrderBy('plan.createTime', 'DESC')
                 .getMany();
-            const latestVersions = new Map();
-            plans.forEach((plan) => {
-                const key = `${plan.purchaseDetailsId}_${plan.planClass}`;
-                if (!latestVersions.has(key) || plan.version > latestVersions.get(key).version) {
-                    latestVersions.set(key, plan);
-                }
-            });
-            const latestPlans = Array.from(latestVersions.values());
+            const latestPlans = plans;
             const plansWithStatus = await Promise.all(latestPlans.map(async (plan) => {
                 const feedbackMain = await this.feedbackMainRepository.findOne({
                     where: {
-                        purchaseDetailsId: plan.purchaseDetailsId?.toString(),
-                        materialCode: plan.materialCode,
-                        planClass: plan.planClass,
+                        productionPlanId: plan.id,
                     },
                     order: { createTime: 'DESC' },
                     relations: ['versions'],
@@ -426,10 +432,12 @@ exports.FeedbackService = FeedbackService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(manufacture_plan_feedback_version_entity_1.ManufacturePlanFeedbackVersion)),
     __param(2, (0, typeorm_1.InjectRepository)(production_plan_entity_1.ProductionPlan)),
     __param(3, (0, typeorm_1.InjectRepository)(purchase_order_entity_1.PurchaseOrder)),
+    __param(5, (0, common_1.Inject)((0, common_1.forwardRef)(() => todo_task_service_1.TodoTaskService))),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.DataSource])
+        typeorm_2.DataSource,
+        todo_task_service_1.TodoTaskService])
 ], FeedbackService);
 //# sourceMappingURL=feedback.service.js.map

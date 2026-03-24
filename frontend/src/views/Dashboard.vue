@@ -2,7 +2,6 @@
   <div class="dashboard-container">
     <h2>仪表盘</h2>
     
-    <!-- 统计卡片 -->
     <div class="stats-card-container">
       <el-card class="stats-card">
         <div class="stats-card-content">
@@ -10,7 +9,7 @@
             <el-icon><i-ep-order /></el-icon>
           </div>
           <div class="stats-card-info">
-            <div class="stats-card-value">{{ orderStats.total }}</div>
+            <div class="stats-card-value">{{ statistics.orders?.total || 0 }}</div>
             <div class="stats-card-label">采购订单总数</div>
           </div>
         </div>
@@ -22,7 +21,7 @@
             <el-icon><i-ep-success /></el-icon>
           </div>
           <div class="stats-card-info">
-            <div class="stats-card-value">{{ orderStats.completed }}</div>
+            <div class="stats-card-value">{{ statistics.orders?.completed || 0 }}</div>
             <div class="stats-card-label">已完成订单</div>
           </div>
         </div>
@@ -34,8 +33,8 @@
             <el-icon><i-ep-warning /></el-icon>
           </div>
           <div class="stats-card-info">
-            <div class="stats-card-value">{{ orderStats.warning }}</div>
-            <div class="stats-card-label">预警订单</div>
+            <div class="stats-card-value">{{ statistics.orders?.delayed || 0 }}</div>
+            <div class="stats-card-label">延期订单</div>
           </div>
         </div>
       </el-card>
@@ -46,59 +45,120 @@
             <el-icon><i-ep-alarm-clock /></el-icon>
           </div>
           <div class="stats-card-info">
-            <div class="stats-card-value">{{ todoCount }}</div>
+            <div class="stats-card-value">{{ statistics.todos?.pending || 0 }}</div>
             <div class="stats-card-label">待办任务</div>
           </div>
         </div>
       </el-card>
     </div>
     
-    <!-- 图表区域 -->
+    <div class="secondary-stats-container">
+      <el-card class="secondary-stats-card">
+        <div class="secondary-stats-header">
+          <el-icon><i-ep-document /></el-icon>
+          <span>生产计划</span>
+        </div>
+        <div class="secondary-stats-content">
+          <div class="stat-item">
+            <span class="stat-value">{{ statistics.plans?.total || 0 }}</span>
+            <span class="stat-label">总数</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value confirmed">{{ statistics.plans?.confirmed || 0 }}</span>
+            <span class="stat-label">已确认</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value pending">{{ statistics.plans?.pending || 0 }}</span>
+            <span class="stat-label">待确认</span>
+          </div>
+        </div>
+      </el-card>
+      
+      <el-card class="secondary-stats-card">
+        <div class="secondary-stats-header">
+          <el-icon><i-ep-edit /></el-icon>
+          <span>进度反馈</span>
+        </div>
+        <div class="secondary-stats-content">
+          <div class="stat-item">
+            <span class="stat-value">{{ statistics.feedbacks?.total || 0 }}</span>
+            <span class="stat-label">总数</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value confirmed">{{ statistics.feedbacks?.completed || 0 }}</span>
+            <span class="stat-label">已完成</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value pending">{{ statistics.feedbacks?.delayed || 0 }}</span>
+            <span class="stat-label">已延期</span>
+          </div>
+        </div>
+      </el-card>
+      
+      <el-card class="secondary-stats-card">
+        <div class="secondary-stats-header">
+          <el-icon><i-ep-bell /></el-icon>
+          <span>待办任务</span>
+        </div>
+        <div class="secondary-stats-content">
+          <div class="stat-item">
+            <span class="stat-value">{{ statistics.todos?.total || 0 }}</span>
+            <span class="stat-label">总数</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value pending">{{ statistics.todos?.pending || 0 }}</span>
+            <span class="stat-label">待处理</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value danger">{{ statistics.todos?.highPriority || 0 }}</span>
+            <span class="stat-label">高优先</span>
+          </div>
+        </div>
+      </el-card>
+    </div>
+    
     <div class="chart-container">
       <el-card class="chart-card">
         <template #header>
           <div class="chart-header">
             <span>订单状态分布</span>
-            <el-select v-model="chartTimeRange" size="small">
-              <el-option label="今日" value="today" />
-              <el-option label="本周" value="week" />
-              <el-option label="本月" value="month" />
-              <el-option label="全年" value="year" />
-            </el-select>
           </div>
         </template>
-        <div ref="orderStatusChartRef" class="chart"></div>
+        <div ref="orderStatusChartRef" class="chart" v-loading="chartLoading"></div>
       </el-card>
       
       <el-card class="chart-card">
         <template #header>
           <div class="chart-header">
-            <span>预警趋势</span>
-            <el-select v-model="chartTimeRange" size="small">
-              <el-option label="今日" value="today" />
-              <el-option label="本周" value="week" />
-              <el-option label="本月" value="month" />
-              <el-option label="全年" value="year" />
+            <span>反馈趋势</span>
+            <el-select v-model="trendDays" size="small" @change="loadFeedbackTrend">
+              <el-option label="近7天" :value="7" />
+              <el-option label="近14天" :value="14" />
+              <el-option label="近30天" :value="30" />
             </el-select>
           </div>
         </template>
-        <div ref="alertTrendChartRef" class="chart"></div>
+        <div ref="feedbackTrendChartRef" class="chart" v-loading="chartLoading"></div>
       </el-card>
     </div>
     
-    <!-- 最近预警和待办任务 -->
     <div class="recent-container">
       <el-card class="recent-card">
         <template #header>
           <div class="recent-header">
             <span>最近预警</span>
+            <el-badge :value="recentAlerts.length" type="danger" v-if="recentAlerts.length > 0" />
           </div>
         </template>
-        <el-table :data="recentAlerts" style="width: 100%">
-          <el-table-column prop="id" label="预警ID" width="100" />
-          <el-table-column prop="alertType" label="预警类型" />
+        <el-table :data="recentAlerts" style="width: 100%" v-loading="alertsLoading" max-height="300">
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="alertType" label="预警类型" width="100" />
           <el-table-column prop="alertContent" label="预警内容" />
-          <el-table-column prop="createTime" label="创建时间" width="180" />
+          <el-table-column prop="createTime" label="创建时间" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.createTime) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="status" label="状态" width="100">
             <template #default="scope">
               <el-tag :type="scope.row.status === 'unhandled' ? 'danger' : 'success'">
@@ -107,75 +167,128 @@
             </template>
           </el-table-column>
         </el-table>
+        <el-empty v-if="recentAlerts.length === 0 && !alertsLoading" description="暂无预警" />
       </el-card>
       
       <el-card class="recent-card">
         <template #header>
           <div class="recent-header">
             <span>最近待办</span>
-            <el-link type="primary" :href="'/todo'">查看全部</el-link>
+            <router-link to="/todo">
+              <el-link type="primary">查看全部</el-link>
+            </router-link>
           </div>
         </template>
-        <el-table :data="recentTodos" style="width: 100%">
-          <el-table-column prop="id" label="任务ID" width="100" />
-          <el-table-column prop="taskType" label="任务类型" />
-          <el-table-column prop="taskContent" label="任务内容" />
-          <el-table-column prop="createTime" label="创建时间" width="180" />
-          <el-table-column prop="priority" label="优先级" width="100">
+        <el-table :data="recentTodos" style="width: 100%" v-loading="todosLoading" max-height="300">
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="taskType" label="任务类型" width="100">
             <template #default="scope">
-              <el-tag :type="getPriorityType(scope.row.priority)">
-                {{ scope.row.priority }}
+              <el-tag :type="getTaskTypeStyle(scope.row.taskType)" size="small">
+                {{ getTaskTypeText(scope.row.taskType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="title" label="任务标题" />
+          <el-table-column prop="createdAt" label="创建时间" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.createdAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="priority" label="优先级" width="80">
+            <template #default="scope">
+              <el-tag :type="getPriorityType(scope.row.priority)" size="small">
+                {{ getPriorityText(scope.row.priority) }}
               </el-tag>
             </template>
           </el-table-column>
         </el-table>
+        <el-empty v-if="recentTodos.length === 0 && !todosLoading" description="暂无待办任务" />
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts';
-import { useUserStore } from '../store/user';
-import { todoApi } from '../api';
+import { dashboardApi } from '../api';
 
-const userStore = useUserStore();
 const orderStatusChartRef = ref<HTMLElement>();
-const alertTrendChartRef = ref<HTMLElement>();
+const feedbackTrendChartRef = ref<HTMLElement>();
 const orderStatusChart = ref<echarts.ECharts>();
-const alertTrendChart = ref<echarts.ECharts>();
-const chartTimeRange = ref('week');
+const feedbackTrendChart = ref<echarts.ECharts>();
 
-// 模拟数据
-const orderStats = ref({
-  total: 120,
-  completed: 85,
-  warning: 15,
-  pending: 20
+const chartLoading = ref(false);
+const alertsLoading = ref(false);
+const todosLoading = ref(false);
+const trendDays = ref(7);
+
+const statistics = ref({
+  orders: { total: 0, completed: 0, inProgress: 0, pending: 0, delayed: 0 },
+  plans: { total: 0, confirmed: 0, pending: 0 },
+  feedbacks: { total: 0, completed: 0, delayed: 0 },
+  todos: { total: 0, pending: 0, processing: 0, completed: 0, highPriority: 0 },
 });
 
-const todoCount = ref(8);
+const recentAlerts = ref<any[]>([]);
+const recentTodos = ref<any[]>([]);
+const orderDistribution = ref<any[]>([]);
+const feedbackTrend = ref<any[]>([]);
 
-const recentAlerts = ref([
-  { id: 'A001', alertType: '进度预警', alertContent: '订单PO-2026-0001 进度延迟', createTime: '2026-02-03 10:30:00', status: 'unhandled' },
-  { id: 'A002', alertType: '反馈预警', alertContent: '供应商未提交进度反馈', createTime: '2026-02-03 09:15:00', status: 'unhandled' },
-  { id: 'A003', alertType: '进度预警', alertContent: '订单PO-2026-0002 进度延迟', createTime: '2026-02-02 16:45:00', status: 'handled' }
-]);
+const formatDate = (date: string | Date) => {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
-const recentTodos = ref([
-  { id: 'T001', taskType: '审批', taskContent: '生产计划PP-2026-0001 审批', createTime: '2026-02-03 11:00:00', priority: '高' },
-  { id: 'T002', taskType: '任务接收', taskContent: '接收新任务', createTime: '2026-02-03 10:00:00', priority: '中' },
-  { id: 'T003', taskType: '进度反馈', taskContent: '提交进度反馈', createTime: '2026-02-03 09:30:00', priority: '中' }
-]);
+const getTaskTypeText = (type: string) => {
+  const typeMap: Record<string, string> = {
+    approval: '审批',
+    task_receive: '任务接收',
+    progress_feedback: '进度反馈',
+    alert_handle: '预警处理',
+    order_confirm: '订单确认',
+    plan_confirm: '计划确认',
+  };
+  return typeMap[type] || type;
+};
+
+const getTaskTypeStyle = (type: string) => {
+  const styleMap: Record<string, string> = {
+    approval: 'danger',
+    task_receive: 'primary',
+    progress_feedback: 'warning',
+    alert_handle: 'danger',
+    order_confirm: 'success',
+    plan_confirm: 'info',
+  };
+  return styleMap[type] || 'info';
+};
+
+const getPriorityText = (priority: string) => {
+  const priorityMap: Record<string, string> = {
+    high: '高',
+    medium: '中',
+    low: '低',
+    urgent: '紧急',
+  };
+  return priorityMap[priority] || priority;
+};
 
 const getPriorityType = (priority: string) => {
   switch (priority) {
-    case '高':
+    case 'high':
+    case 'urgent':
       return 'danger';
-    case '中':
+    case 'medium':
       return 'warning';
-    case '低':
+    case 'low':
       return 'info';
     default:
       return 'info';
@@ -184,14 +297,28 @@ const getPriorityType = (priority: string) => {
 
 const initOrderStatusChart = () => {
   if (orderStatusChartRef.value) {
+    if (orderStatusChart.value) {
+      orderStatusChart.value.dispose();
+    }
     orderStatusChart.value = echarts.init(orderStatusChartRef.value);
+    
+    const data = orderDistribution.value.length > 0
+      ? orderDistribution.value
+      : [
+          { name: '已完成', value: statistics.value.orders?.completed || 0 },
+          { name: '进行中', value: statistics.value.orders?.inProgress || 0 },
+          { name: '待下发', value: statistics.value.orders?.pending || 0 },
+          { name: '已延期', value: statistics.value.orders?.delayed || 0 },
+        ];
+    
     const option = {
       tooltip: {
-        trigger: 'item'
+        trigger: 'item',
+        formatter: '{b}: {c} ({d}%)',
       },
       legend: {
         top: '5%',
-        left: 'center'
+        left: 'center',
       },
       series: [
         {
@@ -202,99 +329,160 @@ const initOrderStatusChart = () => {
           itemStyle: {
             borderRadius: 10,
             borderColor: '#fff',
-            borderWidth: 2
+            borderWidth: 2,
           },
           label: {
             show: false,
-            position: 'center'
+            position: 'center',
           },
           emphasis: {
             label: {
               show: true,
               fontSize: '18',
-              fontWeight: 'bold'
-            }
+              fontWeight: 'bold',
+            },
           },
           labelLine: {
-            show: false
+            show: false,
           },
-          data: [
-            { value: orderStats.value.completed, name: '已完成' },
-            { value: orderStats.value.pending, name: '待完成' },
-            { value: orderStats.value.warning, name: '预警' }
-          ],
-          color: ['#4CAF50', '#1E88E5', '#FF5252']
-        }
-      ]
+          data: data,
+          color: ['#4CAF50', '#1E88E5', '#FF9800', '#FF5252'],
+        },
+      ],
     };
     orderStatusChart.value.setOption(option);
   }
 };
 
-const initAlertTrendChart = () => {
-  if (alertTrendChartRef.value) {
-    alertTrendChart.value = echarts.init(alertTrendChartRef.value);
+const initFeedbackTrendChart = () => {
+  if (feedbackTrendChartRef.value) {
+    if (feedbackTrendChart.value) {
+      feedbackTrendChart.value.dispose();
+    }
+    feedbackTrendChart.value = echarts.init(feedbackTrendChartRef.value);
+    
+    const dates = feedbackTrend.value.map(item => item.date);
+    const completedData = feedbackTrend.value.map(item => item.completed);
+    const delayedData = feedbackTrend.value.map(item => item.delayed);
+    
     const option = {
       tooltip: {
-        trigger: 'axis'
+        trigger: 'axis',
       },
       legend: {
-        data: ['进度预警', '反馈预警']
+        data: ['已完成', '已延期'],
       },
       xAxis: {
         type: 'category',
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        data: dates,
+        axisLabel: {
+          rotate: 45,
+        },
       },
       yAxis: {
-        type: 'value'
+        type: 'value',
       },
       series: [
         {
-          name: '进度预警',
+          name: '已完成',
           type: 'line',
-          data: [3, 5, 2, 6, 4, 1, 2],
+          data: completedData,
           smooth: true,
-          color: '#FF5252'
+          color: '#4CAF50',
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(76, 175, 80, 0.3)' },
+              { offset: 1, color: 'rgba(76, 175, 80, 0.1)' },
+            ]),
+          },
         },
         {
-          name: '反馈预警',
+          name: '已延期',
           type: 'line',
-          data: [1, 2, 3, 2, 1, 0, 1],
+          data: delayedData,
           smooth: true,
-          color: '#FF9800'
-        }
-      ]
+          color: '#FF5252',
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(255, 82, 82, 0.3)' },
+              { offset: 1, color: 'rgba(255, 82, 82, 0.1)' },
+            ]),
+          },
+        },
+      ],
     };
-    alertTrendChart.value.setOption(option);
+    feedbackTrendChart.value.setOption(option);
   }
 };
 
-const loadData = async () => {
+const loadDashboardData = async () => {
+  chartLoading.value = true;
+  alertsLoading.value = true;
+  todosLoading.value = true;
+  
   try {
-    // 加载待办任务数量
-    const todoResponse = await todoApi.getCount();
-    todoCount.value = todoResponse.count || 0;
+    const response = await dashboardApi.getDashboardData() as any;
+    
+    if (response.statistics) {
+      statistics.value = response.statistics;
+    }
+    
+    if (response.orderDistribution) {
+      orderDistribution.value = response.orderDistribution;
+    }
+    
+    if (response.feedbackTrend) {
+      feedbackTrend.value = response.feedbackTrend;
+    }
+    
+    if (response.recentAlerts) {
+      recentAlerts.value = response.recentAlerts;
+    }
+    
+    if (response.recentTodos) {
+      recentTodos.value = response.recentTodos;
+    }
   } catch (error) {
     console.error('Load dashboard data error:', error);
+  } finally {
+    chartLoading.value = false;
+    alertsLoading.value = false;
+    todosLoading.value = false;
   }
+};
+
+const loadFeedbackTrend = async () => {
+  try {
+    const response = await fetch(`/api/dashboard/feedback-trend?days=${trendDays.value}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    const data = await response.json();
+    feedbackTrend.value = data;
+    initFeedbackTrendChart();
+  } catch (error) {
+    console.error('Load feedback trend error:', error);
+  }
+};
+
+const handleResize = () => {
+  orderStatusChart.value?.resize();
+  feedbackTrendChart.value?.resize();
 };
 
 onMounted(async () => {
-  await loadData();
+  await loadDashboardData();
   initOrderStatusChart();
-  initAlertTrendChart();
+  initFeedbackTrendChart();
   
-  // 监听窗口大小变化
-  window.addEventListener('resize', () => {
-    orderStatusChart.value?.resize();
-    alertTrendChart.value?.resize();
-  });
+  window.addEventListener('resize', handleResize);
 });
 
-watch(chartTimeRange, () => {
-  // 重新加载图表数据
-  initOrderStatusChart();
-  initAlertTrendChart();
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  orderStatusChart.value?.dispose();
+  feedbackTrendChart.value?.dispose();
 });
 </script>
 
@@ -312,7 +500,7 @@ watch(chartTimeRange, () => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .stats-card {
@@ -361,6 +549,62 @@ watch(chartTimeRange, () => {
 
 .stats-card-label {
   font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.secondary-stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.secondary-stats-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.secondary-stats-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.secondary-stats-content {
+  display: flex;
+  justify-content: space-around;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.stat-value.confirmed {
+  color: #4CAF50;
+}
+
+.stat-value.pending {
+  color: #FF9800;
+}
+
+.stat-value.danger {
+  color: #FF5252;
+}
+
+.stat-label {
+  font-size: 12px;
   color: #666;
   margin-top: 4px;
 }

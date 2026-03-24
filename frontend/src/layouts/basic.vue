@@ -12,7 +12,7 @@
           @select="handleMenuSelect"
           :collapse="sidebarCollapsed"
         >
-          <el-sub-menu index="dashboard">
+          <el-sub-menu index="dashboard" v-if="hasPermission('dashboard:read')">
             <template #title>
               <i class="el-icon-s-home"></i>
               <span>仪表盘</span>
@@ -23,7 +23,7 @@
               </template>
             </el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="purchase">
+          <el-sub-menu index="purchase" v-if="hasPermission('purchase_order:read')">
             <template #title>
               <i class="el-icon-s-shop"></i>
               <span>采购管理</span>
@@ -39,24 +39,24 @@
               </template>
             </el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="production">
+          <el-sub-menu index="production" v-if="hasPermission(['production_plan:read', 'feedback:read'])">
             <template #title>
               <i class="el-icon-s-grid"></i>
               <span>生产协同</span>
             </template>
 
-            <el-menu-item index="/app/production-plan-confirmation">
+            <el-menu-item index="/app/production-plan-confirmation" v-if="hasPermission('production_plan:read')">
               <template #title>
                 <span>生产计划确认</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/app/progress-feedback">
+            <el-menu-item index="/app/progress-feedback" v-if="hasPermission('feedback:read')">
               <template #title>
                 <span>计划进度反馈</span>
               </template>
             </el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="todo">
+          <el-sub-menu index="todo" v-if="hasPermission('todo:read')">
             <template #title>
               <i class="el-icon-check"></i>
               <span>待办事项</span>
@@ -67,12 +67,17 @@
               </template>
             </el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="permission">
+          <el-sub-menu index="system" v-if="hasPermission(['user:read', 'role:read'])">
             <template #title>
-              <i class="el-icon-lock"></i>
-              <span>权限管理</span>
+              <i class="el-icon-setting"></i>
+              <span>系统管理</span>
             </template>
-            <el-menu-item index="/app/permission">
+            <el-menu-item index="/app/user" v-if="hasPermission('user:read')">
+              <template #title>
+                <span>用户管理</span>
+              </template>
+            </el-menu-item>
+            <el-menu-item index="/app/permission" v-if="hasPermission('role:read')">
               <template #title>
                 <span>权限管理</span>
               </template>
@@ -121,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store/user';
 import { ElMessage } from 'element-plus';
@@ -142,6 +147,11 @@ const activeMenu = computed(() => {
 const userInfo = computed(() => {
   return userStore.userInfo;
 });
+
+// 权限检查
+const hasPermission = (permission: string | string[]) => {
+  return userStore.hasPermission(permission);
+};
 
 // 切换侧边栏
 const toggleSidebar = () => {
@@ -164,11 +174,11 @@ const handleMenuSelect = (key: string, keyPath: string[]) => {
     // 使用router.push的promise形式，以便更好地处理错误
     router.push(key).then(() => {
       console.log('Navigation successful to:', key);
-    }).catch((error) => {
+    }).catch((error: any) => {
       console.error('Navigation error:', error);
       ElMessage.error('导航失败: ' + (error.message || '未知错误'));
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Navigation error:', error);
     ElMessage.error('导航失败: ' + (error.message || '未知错误'));
   }

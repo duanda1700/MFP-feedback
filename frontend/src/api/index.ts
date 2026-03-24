@@ -1,6 +1,5 @@
 import request from './request';
 
-// 认证相关API
 export const authApi = {
   login: (data: { username: string; password: string }) => request.post('/auth/login', data),
   logout: () => request.post('/auth/logout'),
@@ -8,7 +7,6 @@ export const authApi = {
   getUserInfo: () => request.get('/auth/user')
 };
 
-// 采购订单相关API
 export const purchaseOrderApi = {
   getList: (params: any) => request.get('/order/list', { params }),
   getDetail: (id: number) => request.get(`/order/detail/${id}`),
@@ -24,7 +22,6 @@ export const purchaseOrderApi = {
   updateRemarks: (data: { materialCode: string; remarks: string }) => request.put('/order/update-remarks', data)
 };
 
-// 生产计划相关API
 export const productionPlanApi = {
   getList: (params: any) => request.get('/plan/list', { params }),
   getDetail: (id: string) => request.get(`/plan/detail/${id}`),
@@ -36,7 +33,6 @@ export const productionPlanApi = {
   submitApproval: (id: string) => request.post(`/plan/submit-approval/${id}`)
 };
 
-// 进度反馈相关API
 export const progressFeedbackApi = {
   getList: (params: any) => request.get('/feedback/list', { params }),
   getDetail: (id: string) => request.get(`/feedback/detail/${id}`),
@@ -46,24 +42,77 @@ export const progressFeedbackApi = {
   getOrdersWithPlans: (params: any) => request.get('/feedback/orders-with-plans', { params })
 };
 
-// 待办任务相关API
 export const todoApi = {
-  getList: (params: any) => request.get('/task/list', { params }),
-  markAsDone: (id: string) => request.put(`/task/cancel/${id}`),
-  getCount: () => request.get('/task/count')
+  getList: (params: any) => request.get('/todo/list', { params }),
+  getMyTasks: (params: any) => request.get('/todo/my', { params }),
+  getStatistics: (userId?: number) => request.get('/todo/statistics', { params: { userId } }),
+  getOverdue: (userId?: number) => request.get('/todo/overdue', { params: { userId } }),
+  getById: (id: number) => request.get(`/todo/${id}`),
+  getByRelated: (type: string, id: string) => request.get(`/todo/related/${type}/${id}`),
+  create: (data: any) => request.post('/todo/create', data),
+  start: (id: number) => request.put(`/todo/${id}/start`),
+  complete: (id: number, remark?: string) => request.put(`/todo/${id}/complete`, { remark }),
+  cancel: (id: number, remark?: string) => request.put(`/todo/${id}/cancel`, { remark }),
+  updateStatus: (id: number, status: string, remark?: string) => request.put(`/todo/${id}/status`, { status, remark }),
+  batchComplete: (ids: number[], remark?: string) => request.post('/todo/batch/complete', { ids, remark }),
 };
 
-// 权限管理相关API
 export const permissionApi = {
   getRoles: () => request.get('/permission/roles'),
-  createRole: (data: any) => request.post('/permission/roles', data),
-  updateRole: (id: string, data: any) => request.put(`/permission/roles/${id}`, data),
-  deleteRole: (id: string) => request.delete(`/permission/roles/${id}`),
-  getPermissions: () => request.get('/permission/list'),
-  assignPermission: (data: { roleId: string; permissions: string[] }) => request.post('/permission/assign', data)
+  getRoleById: (id: number) => request.get(`/permission/roles/${id}`),
+  getRoleWithPermissions: (id: number) => request.get(`/permission/roles/${id}/with-permissions`),
+  createRole: (data: { name: string; displayName: string; description?: string }) => 
+    request.post('/permission/roles', data),
+  updateRole: (id: number, data: { displayName?: string; description?: string; status?: number }) => 
+    request.put(`/permission/roles/${id}`, data),
+  deleteRole: (id: number) => request.delete(`/permission/roles/${id}`),
+  getPermissions: () => request.get('/permission/permissions'),
+  getPermissionsByModule: () => request.get('/permission/permissions/by-module'),
+  getRolePermissions: (roleId: number) => request.get(`/permission/roles/${roleId}/permissions`),
+  assignPermissions: (roleId: number, permissionIds: number[]) => 
+    request.post(`/permission/roles/${roleId}/permissions`, { permissionIds }),
+  getUserRoles: (userId: number) => request.get(`/permission/users/${userId}/roles`),
+  getUserPermissions: (userId: number) => request.get(`/permission/users/${userId}/permissions`),
+  assignUserRoles: (userId: number, roleIds: number[]) => 
+    request.post(`/permission/users/${userId}/roles`, { roleIds }),
+  getMyPermissions: () => request.get('/permission/me/permissions'),
+  getMyRoles: () => request.get('/permission/me/roles'),
+  checkPermission: (userId: number, permissionCode: string) => 
+    request.post('/permission/check', { userId, permissionCode })
 };
 
-// 通知相关API
+export const userApi = {
+  getList: (params?: { keyword?: string; status?: number; page?: number; pageSize?: number }) => 
+    request.get('/user', { params }),
+  getMe: () => request.get('/user/me'),
+  getById: (id: number) => request.get(`/user/${id}`),
+  create: (data: {
+    username: string;
+    password: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    department?: string;
+    supplierId?: number;
+    roleIds?: number[];
+  }) => request.post('/user', data),
+  update: (id: number, data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    department?: string;
+    supplierId?: number;
+    status?: number;
+  }) => request.put(`/user/${id}`, data),
+  updatePassword: (id: number, oldPassword: string, newPassword: string) => 
+    request.put(`/user/${id}/password`, { oldPassword, newPassword }),
+  resetPassword: (id: number, newPassword: string) => 
+    request.put(`/user/${id}/reset-password`, { newPassword }),
+  delete: (id: number) => request.delete(`/user/${id}`),
+  assignRoles: (id: number, roleIds: number[]) => 
+    request.post(`/user/${id}/roles`, { roleIds })
+};
+
 export const notificationApi = {
   getList: (params: any) => request.get('/notification/list', { params }),
   getUnreadCount: () => request.get('/notification/unread-count'),
@@ -71,7 +120,6 @@ export const notificationApi = {
   markAllAsRead: () => request.put('/notification/mark-all-as-read')
 };
 
-// 供应商相关API
 export const supplierApi = {
   getOrders: () => request.get('/supplier/orders'),
   getOrderDetails: (orderId: string) => request.get(`/supplier/orders/${orderId}`),
@@ -84,8 +132,15 @@ export const orderTrackingApi = {
   getOrders: () => request.get('/order-tracking/orders'),
   getStatistics: () => request.get('/order-tracking/statistics'),
   getDetail: (djbH: string) => request.get(`/order-tracking/detail/${djbH}`),
-  comparePlans: (djbH: string) => request.get(`/order-tracking/compare/${djbH}`),
-  getHistory: (djbH: string) => request.get(`/order-tracking/history/${djbH}`)
+  comparePlans: (djbH: string) => request.get(`/order-tracking/compare/${djbH}`)
+};
+
+export const dashboardApi = {
+  getStatistics: () => request.get('/order-tracking/statistics'),
+  getRecentAlerts: (params?: { limit?: number }) => request.get('/alert/list', { params }),
+  getRecentTodos: (params?: { limit?: number }) => request.get('/todo/my', { params }),
+  getTodoStatistics: (userId?: number) => request.get('/todo/statistics', { params: { userId } }),
+  getDashboardData: () => request.get('/dashboard'),
 };
 
 export const getSupplierOrders = () => supplierApi.getOrders();

@@ -18,6 +18,9 @@ import { NotificationModule } from './notification/notification.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { ExcelModule } from './excel/excel.module';
 import { OrderTrackingModule } from './order-tracking/order-tracking.module';
+import { UserModule } from './user/user.module';
+import { TodoTaskModule } from './todo/todo-task.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -37,6 +40,9 @@ import { OrderTrackingModule } from './order-tracking/order-tracking.module';
     SupplierModule,
     ExcelModule,
     OrderTrackingModule,
+    UserModule,
+    TodoTaskModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

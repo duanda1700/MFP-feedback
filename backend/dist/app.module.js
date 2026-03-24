@@ -27,6 +27,9 @@ const notification_module_1 = require("./notification/notification.module");
 const supplier_module_1 = require("./supplier/supplier.module");
 const excel_module_1 = require("./excel/excel.module");
 const order_tracking_module_1 = require("./order-tracking/order-tracking.module");
+const user_module_1 = require("./user/user.module");
+const todo_task_module_1 = require("./todo/todo-task.module");
+const dashboard_module_1 = require("./dashboard/dashboard.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -49,6 +52,9 @@ exports.AppModule = AppModule = __decorate([
             supplier_module_1.SupplierModule,
             excel_module_1.ExcelModule,
             order_tracking_module_1.OrderTrackingModule,
+            user_module_1.UserModule,
+            todo_task_module_1.TodoTaskModule,
+            dashboard_module_1.DashboardModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

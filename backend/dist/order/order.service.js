@@ -22,6 +22,8 @@ const production_plan_entity_1 = require("../database/entities/production-plan.e
 const purchase_order_task_entity_1 = require("../database/entities/purchase-order-task.entity");
 const supplier_entity_1 = require("../database/entities/supplier.entity");
 const operation_log_entity_1 = require("../database/entities/operation-log.entity");
+const todo_task_service_1 = require("../todo/todo-task.service");
+const todo_task_entity_1 = require("../database/entities/todo-task.entity");
 let OrderService = class OrderService {
     orderRepository;
     orderDetailsRepository;
@@ -29,13 +31,15 @@ let OrderService = class OrderService {
     orderTaskRepository;
     supplierRepository;
     operationLogRepository;
-    constructor(orderRepository, orderDetailsRepository, productionPlanRepository, orderTaskRepository, supplierRepository, operationLogRepository) {
+    todoTaskService;
+    constructor(orderRepository, orderDetailsRepository, productionPlanRepository, orderTaskRepository, supplierRepository, operationLogRepository, todoTaskService) {
         this.orderRepository = orderRepository;
         this.orderDetailsRepository = orderDetailsRepository;
         this.productionPlanRepository = productionPlanRepository;
         this.orderTaskRepository = orderTaskRepository;
         this.supplierRepository = supplierRepository;
         this.operationLogRepository = operationLogRepository;
+        this.todoTaskService = todoTaskService;
     }
     async getOrderList(query) {
         const { page = 1, pageSize = 10, orderStatus, feedbackStatus, supplierName, startDate, endDate, djbH, project, setCount, applyUsername, applyDept, supplierId, } = query;
@@ -317,7 +321,9 @@ let OrderService = class OrderService {
             'pending': '待下发',
             'issued': '已下发',
             'confirmed': '已确认',
+            'inProgress': '进行中',
             'completed': '已完成',
+            'delayed': '已延期',
             'changed': '有变更'
         };
         const actualStatus = statusMap[status] || status;
@@ -474,6 +480,29 @@ let OrderService = class OrderService {
             });
             await queryRunner.manager.save(operationLog);
             await queryRunner.commitTransaction();
+            try {
+                await this.todoTaskService.createTask({
+                    taskType: todo_task_entity_1.TodoTaskType.ORDER_CONFIRM,
+                    title: `订单确认: ${order.djbH}`,
+                    content: `请确认采购订单 ${order.djbH}，供应商: ${supplier.supplierName}`,
+                    priority: todo_task_entity_1.TodoTaskPriority.HIGH,
+                    assigneeId: supplier.id,
+                    assigneeName: supplier.supplierName,
+                    creatorId: 1,
+                    creatorName: '系统',
+                    relatedType: 'purchase_order',
+                    relatedId: order.id.toString(),
+                    relatedData: {
+                        orderDjbH: order.djbH,
+                        supplierId: supplier.id,
+                        supplierName: supplier.supplierName,
+                    },
+                    dueDate: planCompleteTime,
+                });
+            }
+            catch (todoError) {
+                console.error('Failed to create todo task:', todoError);
+            }
             console.log(`Order ${orderId} issued successfully to supplier ${supplierId}`);
             return {
                 success: true,
@@ -529,11 +558,13 @@ exports.OrderService = OrderService = __decorate([
     __param(3, (0, typeorm_1.InjectRepository)(purchase_order_task_entity_1.PurchaseOrderTask)),
     __param(4, (0, typeorm_1.InjectRepository)(supplier_entity_1.Supplier)),
     __param(5, (0, typeorm_1.InjectRepository)(operation_log_entity_1.OperationLog)),
+    __param(6, (0, common_1.Inject)((0, common_1.forwardRef)(() => todo_task_service_1.TodoTaskService))),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        todo_task_service_1.TodoTaskService])
 ], OrderService);
 //# sourceMappingURL=order.service.js.map

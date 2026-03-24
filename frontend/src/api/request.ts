@@ -1,7 +1,13 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-// 创建axios实例
-const service = axios.create({
+interface RequestInterface {
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+}
+
+const service: AxiosInstance = axios.create({
   baseURL: (import.meta as any).env?.VITE_API_BASE_URL || '/api',
   timeout: 10000,
   headers: {
@@ -122,4 +128,15 @@ service.interceptors.response.use(
   }
 );
 
-export default service;
+const request: RequestInterface = {
+  get: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => 
+    service.get(url, config) as Promise<T>,
+  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
+    service.post(url, data, config) as Promise<T>,
+  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => 
+    service.put(url, data, config) as Promise<T>,
+  delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => 
+    service.delete(url, config) as Promise<T>,
+};
+
+export default request;

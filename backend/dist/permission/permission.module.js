@@ -11,17 +11,20 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const permission_service_1 = require("./permission.service");
 const permission_controller_1 = require("./permission.controller");
-const role_permission_entity_1 = require("../database/entities/role-permission.entity");
 const permission_guard_1 = require("./guards/permission.guard");
+const role_entity_1 = require("../database/entities/role.entity");
+const permission_entity_1 = require("../database/entities/permission.entity");
+const role_permission_entity_1 = require("../database/entities/role-permission.entity");
+const user_role_entity_1 = require("../database/entities/user-role.entity");
 let PermissionModule = class PermissionModule {
 };
 exports.PermissionModule = PermissionModule;
 exports.PermissionModule = PermissionModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([role_permission_entity_1.RolePermission])],
-        providers: [permission_service_1.PermissionService, permission_guard_1.PermissionGuard],
+        imports: [typeorm_1.TypeOrmModule.forFeature([role_entity_1.Role, permission_entity_1.Permission, role_permission_entity_1.RolePermission, user_role_entity_1.UserRole])],
+        providers: [permission_service_1.PermissionService, permission_guard_1.PermissionGuard, permission_guard_1.PermissionsGuard],
         controllers: [permission_controller_1.PermissionController],
-        exports: [permission_service_1.PermissionService, permission_guard_1.PermissionGuard],
+        exports: [permission_service_1.PermissionService, permission_guard_1.PermissionGuard, permission_guard_1.PermissionsGuard],
     })
 ], PermissionModule);
 //# sourceMappingURL=permission.module.js.map

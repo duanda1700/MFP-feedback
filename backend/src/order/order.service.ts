@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PurchaseOrder } from '../database/entities/purchase-order.entity';
@@ -7,6 +7,8 @@ import { ProductionPlan } from '../database/entities/production-plan.entity';
 import { PurchaseOrderTask } from '../database/entities/purchase-order-task.entity';
 import { Supplier } from '../database/entities/supplier.entity';
 import { OperationLog } from '../database/entities/operation-log.entity';
+import { TodoTaskService } from '../todo/todo-task.service';
+import { TodoTaskType, TodoTaskPriority } from '../database/entities/todo-task.entity';
 
 @Injectable()
 export class OrderService {
@@ -17,6 +19,8 @@ export class OrderService {
     @InjectRepository(PurchaseOrderTask) private orderTaskRepository: Repository<PurchaseOrderTask>,
     @InjectRepository(Supplier) private supplierRepository: Repository<Supplier>,
     @InjectRepository(OperationLog) private operationLogRepository: Repository<OperationLog>,
+    @Inject(forwardRef(() => TodoTaskService))
+    private todoTaskService: TodoTaskService,
   ) {}
 
   // 获取订单列表
@@ -403,7 +407,9 @@ export class OrderService {
       'pending': '待下发',
       'issued': '已下发',
       'confirmed': '已确认',
+      'inProgress': '进行中',
       'completed': '已完成',
+      'delayed': '已延期',
       'changed': '有变更'
     };
 
@@ -615,6 +621,30 @@ export class OrderService {
       
       // 提交事务
       await queryRunner.commitTransaction();
+      
+      // 创建待办任务 - 订单确认任务
+      try {
+        await this.todoTaskService.createTask({
+          taskType: TodoTaskType.ORDER_CONFIRM,
+          title: `订单确认: ${order.djbH}`,
+          content: `请确认采购订单 ${order.djbH}，供应商: ${supplier.supplierName}`,
+          priority: TodoTaskPriority.HIGH,
+          assigneeId: supplier.id,
+          assigneeName: supplier.supplierName,
+          creatorId: 1,
+          creatorName: '系统',
+          relatedType: 'purchase_order',
+          relatedId: order.id.toString(),
+          relatedData: {
+            orderDjbH: order.djbH,
+            supplierId: supplier.id,
+            supplierName: supplier.supplierName,
+          },
+          dueDate: planCompleteTime,
+        });
+      } catch (todoError) {
+        console.error('Failed to create todo task:', todoError);
+      }
       
       console.log(`Order ${orderId} issued successfully to supplier ${supplierId}`);
       return {

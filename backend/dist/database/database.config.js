@@ -15,6 +15,10 @@ const operation_log_entity_1 = require("./entities/operation-log.entity");
 const user_entity_1 = require("../auth/entities/user.entity");
 const manufacture_plan_feedback_main_entity_1 = require("./entities/manufacture-plan-feedback-main.entity");
 const manufacture_plan_feedback_version_entity_1 = require("./entities/manufacture-plan-feedback-version.entity");
+const role_entity_1 = require("./entities/role.entity");
+const permission_entity_1 = require("./entities/permission.entity");
+const user_role_entity_1 = require("./entities/user-role.entity");
+const todo_task_entity_1 = require("./entities/todo-task.entity");
 exports.databaseConfig = {
     type: 'mysql',
     host: 'localhost',
@@ -37,6 +41,10 @@ exports.databaseConfig = {
         user_entity_1.User,
         manufacture_plan_feedback_main_entity_1.ManufacturePlanFeedbackMain,
         manufacture_plan_feedback_version_entity_1.ManufacturePlanFeedbackVersion,
+        role_entity_1.Role,
+        permission_entity_1.Permission,
+        user_role_entity_1.UserRole,
+        todo_task_entity_1.TodoTask,
     ],
     synchronize: false,
     logging: true,

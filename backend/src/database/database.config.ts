@@ -13,6 +13,10 @@ import { OperationLog } from './entities/operation-log.entity';
 import { User } from '../auth/entities/user.entity';
 import { ManufacturePlanFeedbackMain } from './entities/manufacture-plan-feedback-main.entity';
 import { ManufacturePlanFeedbackVersion } from './entities/manufacture-plan-feedback-version.entity';
+import { Role } from './entities/role.entity';
+import { Permission } from './entities/permission.entity';
+import { UserRole } from './entities/user-role.entity';
+import { TodoTask } from './entities/todo-task.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'mysql',
@@ -36,6 +40,10 @@ export const databaseConfig: TypeOrmModuleOptions = {
     User,
     ManufacturePlanFeedbackMain,
     ManufacturePlanFeedbackVersion,
+    Role,
+    Permission,
+    UserRole,
+    TodoTask,
   ],
   synchronize: false,
   logging: true,

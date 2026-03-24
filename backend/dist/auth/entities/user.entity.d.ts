@@ -3,10 +3,13 @@ export declare class User {
     username: string;
     password: string;
     name: string;
-    role: string;
+    email: string;
+    phone: string;
     department: string;
     supplierId: number;
-    isActive: boolean;
+    status: number;
+    lastLoginTime: Date;
+    lastLoginIp: string;
     createTime: Date;
     updateTime: Date;
 }

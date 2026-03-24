@@ -5,6 +5,7 @@ import { ProductionPlan } from '../database/entities/production-plan.entity';
 import { PurchaseOrderTask } from '../database/entities/purchase-order-task.entity';
 import { Supplier } from '../database/entities/supplier.entity';
 import { OperationLog } from '../database/entities/operation-log.entity';
+import { TodoTaskService } from '../todo/todo-task.service';
 export declare class OrderService {
     private orderRepository;
     private orderDetailsRepository;
@@ -12,7 +13,8 @@ export declare class OrderService {
     private orderTaskRepository;
     private supplierRepository;
     private operationLogRepository;
-    constructor(orderRepository: Repository<PurchaseOrder>, orderDetailsRepository: Repository<PurchaseDetails>, productionPlanRepository: Repository<ProductionPlan>, orderTaskRepository: Repository<PurchaseOrderTask>, supplierRepository: Repository<Supplier>, operationLogRepository: Repository<OperationLog>);
+    private todoTaskService;
+    constructor(orderRepository: Repository<PurchaseOrder>, orderDetailsRepository: Repository<PurchaseDetails>, productionPlanRepository: Repository<ProductionPlan>, orderTaskRepository: Repository<PurchaseOrderTask>, supplierRepository: Repository<Supplier>, operationLogRepository: Repository<OperationLog>, todoTaskService: TodoTaskService);
     getOrderList(query: any): Promise<{
         data: PurchaseOrder[];
         total: number;

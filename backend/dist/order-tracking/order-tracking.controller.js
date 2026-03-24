@@ -32,9 +32,6 @@ let OrderTrackingController = class OrderTrackingController {
     async comparePlans(djbH) {
         return this.orderTrackingService.comparePlans(djbH);
     }
-    async getFeedbackHistory(djbH) {
-        return this.orderTrackingService.getFeedbackHistory(djbH);
-    }
 };
 exports.OrderTrackingController = OrderTrackingController;
 __decorate([
@@ -63,13 +60,6 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], OrderTrackingController.prototype, "comparePlans", null);
-__decorate([
-    (0, common_1.Get)('history/:djbH'),
-    __param(0, (0, common_1.Param)('djbH')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], OrderTrackingController.prototype, "getFeedbackHistory", null);
 exports.OrderTrackingController = OrderTrackingController = __decorate([
     (0, common_1.Controller)('api/order-tracking'),
     __metadata("design:paramtypes", [order_tracking_service_1.OrderTrackingService])

@@ -542,14 +542,23 @@ const submitIssue = async () => {
     await issueFormRef.value.validate();
     submitting.value = true;
     
-    // 准备明细标记数据
+    if (planFeedbackTemplate.value.length === 0) {
+      ElMessage.info('正在自动生成计划...');
+      await generateTemplate();
+      if (planFeedbackTemplate.value.length === 0) {
+        ElMessage.warning('无法生成计划，请检查订单明细数据');
+        submitting.value = false;
+        return;
+      }
+      ElMessage.success('计划已自动生成，正在提交下发...');
+    }
+    
     const detailMarks = orderDetails.value.map(detail => ({
       detailId: detail.id,
       isKeyMaterial: detail.isKeyMaterial === '是',
       isComplianceMaterial: detail.isComplianceMaterial === '是'
     }));
     
-    // 提交请求
     await purchaseOrderApi.issueOrder({
       orderId: orderId.value,
       supplierId: issueForm.value.supplierId,

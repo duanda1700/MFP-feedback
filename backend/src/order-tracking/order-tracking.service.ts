@@ -31,8 +31,10 @@ export class OrderTrackingService {
 
     const result: any = {
       pending: [],
-      processing: [],
+      confirmed: [],
+      inProgress: [],
       completed: [],
+      delayed: [],
     };
 
     for (const order of orders) {
@@ -63,10 +65,16 @@ export class OrderTrackingService {
           result.pending.push(orderWithDetails);
           break;
         case '已确认':
-          result.processing.push(orderWithDetails);
+          result.confirmed.push(orderWithDetails);
+          break;
+        case '进行中':
+          result.inProgress.push(orderWithDetails);
           break;
         case '已完成':
           result.completed.push(orderWithDetails);
+          break;
+        case '已延期':
+          result.delayed.push(orderWithDetails);
           break;
         default:
           result.pending.push(orderWithDetails);
@@ -225,76 +233,24 @@ export class OrderTrackingService {
     };
   }
 
-  async getFeedbackHistory(djbH: string) {
-    const feedbackMains = await this.feedbackMainRepository.find({
-      where: { djbH },
-      order: { createTime: 'DESC' },
-      relations: ['versions'],
-    });
-
-    const history: any[] = [];
-
-    for (const main of feedbackMains) {
-      if (main.versions && main.versions.length > 0) {
-        const sortedVersions = main.versions.sort((a, b) => b.version - a.version);
-        
-        for (const version of sortedVersions) {
-          history.push({
-            id: version.id,
-            materialCode: main.materialCode,
-            materialDesc: main.materialDesc,
-            planClass: main.planClass,
-            version: version.version,
-            feedbackTime: version.feedbackTime,
-            progressStatus: version.progressStatus,
-            finishedQuantity: version.finishedQuantity,
-            planQuantity: version.planQuantity,
-            actualDeliveryDate: version.actualDeliveryDate,
-            remarks: version.remarks,
-            creator: version.creator,
-          });
-        }
-      }
-    }
-
-    const groupedByCycle: any = {};
-    history.forEach((item) => {
-      const cycle = item.feedbackTime ? this.formatDateToCycle(item.feedbackTime) : '未知周期';
-      if (!groupedByCycle[cycle]) {
-        groupedByCycle[cycle] = [];
-      }
-      groupedByCycle[cycle].push(item);
-    });
-
-    return {
-      djbH,
-      totalRecords: history.length,
-      groupedByCycle,
-      allRecords: history,
-    };
-  }
-
   async getOrderStatistics() {
     const total = await this.orderRepository.count();
     const pending = await this.orderRepository.count({
       where: [{ orderStatus: '待下发' }, { orderStatus: '已下发' }],
     });
-    const processing = await this.orderRepository.count({
+    const confirmed = await this.orderRepository.count({
       where: { orderStatus: '已确认' },
+    });
+    const inProgress = await this.orderRepository.count({
+      where: { orderStatus: '进行中' },
     });
     const completed = await this.orderRepository.count({
       where: { orderStatus: '已完成' },
     });
+    const delayed = await this.orderRepository.count({
+      where: { orderStatus: '已延期' },
+    });
 
-    return { total, pending, processing, completed };
-  }
-
-  private formatDateToCycle(date: Date): string {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const startOfYear = new Date(year, 0, 1);
-    const days = Math.floor((d.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
-    const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-    return `${year}W${weekNumber.toString().padStart(2, '0')}`;
+    return { total, pending, confirmed, inProgress, completed, delayed };
   }
 }

@@ -11,12 +11,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolePermission = void 0;
 const typeorm_1 = require("typeorm");
+const permission_entity_1 = require("./permission.entity");
+const role_entity_1 = require("./role.entity");
 let RolePermission = class RolePermission {
     id;
     roleId;
     permissionId;
+    createdBy;
     createTime;
     updateTime;
+    role;
+    permission;
 };
 exports.RolePermission = RolePermission;
 __decorate([
@@ -34,6 +39,10 @@ __decorate([
     __metadata("design:type", Number)
 ], RolePermission.prototype, "permissionId", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'created_by', type: 'int', nullable: true }),
+    __metadata("design:type", Number)
+], RolePermission.prototype, "createdBy", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'create_time' }),
     __metadata("design:type", Date)
 ], RolePermission.prototype, "createTime", void 0);
@@ -41,6 +50,16 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: 'update_time' }),
     __metadata("design:type", Date)
 ], RolePermission.prototype, "updateTime", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => role_entity_1.Role),
+    (0, typeorm_1.JoinColumn)({ name: 'role_id' }),
+    __metadata("design:type", role_entity_1.Role)
+], RolePermission.prototype, "role", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => permission_entity_1.Permission),
+    (0, typeorm_1.JoinColumn)({ name: 'permission_id' }),
+    __metadata("design:type", permission_entity_1.Permission)
+], RolePermission.prototype, "permission", void 0);
 exports.RolePermission = RolePermission = __decorate([
     (0, typeorm_1.Entity)('ROLE_PERMISSION')
 ], RolePermission);

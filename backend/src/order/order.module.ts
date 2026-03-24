@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
@@ -8,9 +8,13 @@ import { ProductionPlan } from '../database/entities/production-plan.entity';
 import { PurchaseOrderTask } from '../database/entities/purchase-order-task.entity';
 import { Supplier } from '../database/entities/supplier.entity';
 import { OperationLog } from '../database/entities/operation-log.entity';
+import { TodoTaskModule } from '../todo/todo-task.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PurchaseOrder, PurchaseDetails, ProductionPlan, PurchaseOrderTask, Supplier, OperationLog])],
+  imports: [
+    TypeOrmModule.forFeature([PurchaseOrder, PurchaseDetails, ProductionPlan, PurchaseOrderTask, Supplier, OperationLog]),
+    forwardRef(() => TodoTaskModule),
+  ],
   providers: [OrderService],
   controllers: [OrderController],
   exports: [OrderService],

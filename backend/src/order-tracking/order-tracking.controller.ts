@@ -24,9 +24,4 @@ export class OrderTrackingController {
   async comparePlans(@Param('djbH') djbH: string) {
     return this.orderTrackingService.comparePlans(djbH);
   }
-
-  @Get('history/:djbH')
-  async getFeedbackHistory(@Param('djbH') djbH: string) {
-    return this.orderTrackingService.getFeedbackHistory(djbH);
-  }
 }

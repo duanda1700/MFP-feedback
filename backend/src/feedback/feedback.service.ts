@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ManufacturePlanFeedbackMain } from '../database/entities/manufacture-plan-feedback-main.entity';
 import { ManufacturePlanFeedbackVersion } from '../database/entities/manufacture-plan-feedback-version.entity';
 import { ProductionPlan } from '../database/entities/production-plan.entity';
 import { PurchaseOrder } from '../database/entities/purchase-order.entity';
+import { TodoTaskService } from '../todo/todo-task.service';
+import { TodoTaskType, TodoTaskPriority } from '../database/entities/todo-task.entity';
 
 @Injectable()
 export class FeedbackService {
@@ -18,6 +20,8 @@ export class FeedbackService {
     @InjectRepository(PurchaseOrder)
     private purchaseOrderRepository: Repository<PurchaseOrder>,
     private dataSource: DataSource,
+    @Inject(forwardRef(() => TodoTaskService))
+    private todoTaskService: TodoTaskService,
   ) {}
 
   async getFeedbackList(query: any) {
@@ -137,9 +141,10 @@ export class FeedbackService {
         const purchaseDetailsIdStr = productionPlan.purchaseDetailsId.toString();
         const materialCode = productionPlan.materialCode;
         const planClass = productionPlan.planClass;
+        const productionPlanId = item.productionPlanId;
         
-        // 使用purchaseDetailsId + materialCode + planClass作为唯一键
-        const uniqueKey = `${purchaseDetailsIdStr}_${materialCode}_${planClass}`;
+        // 使用productionPlanId作为唯一键
+        const uniqueKey = productionPlanId;
         
         // 如果已经处理过这个唯一键，跳过
         if (mainRecordMap.has(uniqueKey)) {
@@ -151,9 +156,7 @@ export class FeedbackService {
           ManufacturePlanFeedbackMain,
           {
             where: {
-              purchaseDetailsId: purchaseDetailsIdStr,
-              materialCode: materialCode,
-              planClass: planClass,
+              productionPlanId: productionPlanId,
               feedbackCycle,
             },
           },
@@ -163,6 +166,7 @@ export class FeedbackService {
           mainRecord = queryRunner.manager.create(ManufacturePlanFeedbackMain, {
             id: this.generateId(),
             purchaseDetailsId: purchaseDetailsIdStr,
+            productionPlanId: productionPlanId,
             setCount: productionPlan.setCount,
             drawingNo: productionPlan.drawingNo,
             sfzz: productionPlan.sfzz,
@@ -210,10 +214,8 @@ export class FeedbackService {
           continue;
         }
 
-        const purchaseDetailsIdStr = productionPlan.purchaseDetailsId.toString();
-        const materialCode = productionPlan.materialCode;
-        const planClass = productionPlan.planClass;
-        const uniqueKey = `${purchaseDetailsIdStr}_${materialCode}_${planClass}`;
+        const productionPlanId = item.productionPlanId;
+        const uniqueKey = productionPlanId;
         
         const recordData = mainRecordMap.get(uniqueKey);
         
@@ -253,7 +255,7 @@ export class FeedbackService {
           {
             id: this.generateId(),
             mainId: mainRecord.id,
-            purchaseDetailsId: purchaseDetailsIdStr,
+            purchaseDetailsId: productionPlan.purchaseDetailsId?.toString(),
             setCount: productionPlan.setCount,
             drawingNo: productionPlan.drawingNo,
             sfzz: productionPlan.sfzz,
@@ -274,7 +276,7 @@ export class FeedbackService {
       }
 
       // 第三步：更新所有mainRecord的latestVersion和progressStatus
-      for (const [purchaseDetailsIdStr, { mainRecord, newVersion, finishedQuantity, planQuantity, plannedDate, progressStatus }] of mainRecordMap) {
+      for (const [productionPlanId, { mainRecord, newVersion, finishedQuantity, planQuantity, plannedDate, progressStatus }] of mainRecordMap) {
         mainRecord.latestVersion = newVersion;
         mainRecord.updateTime = new Date();
         
@@ -309,7 +311,7 @@ export class FeedbackService {
         await queryRunner.manager.save(mainRecord);
       }
 
-      // 第四步：更新订单的反馈状态
+      // 第四步：更新订单的反馈状态和订单状态
       for (const djbH of djbHSet) {
         // 查询该订单下所有反馈明细的进展状态
         const feedbackMains = await queryRunner.manager.find(
@@ -331,14 +333,33 @@ export class FeedbackService {
           orderFeedbackStatus = '已延期';
         }
 
-        // 更新订单的反馈状态
-        await queryRunner.manager.update(
-          PurchaseOrder,
-          { djbH },
-          { feedbackStatus: orderFeedbackStatus },
-        );
-        
-        console.log(`Updated order ${djbH} feedback status to ${orderFeedbackStatus}`);
+        // 查询订单当前状态
+        const order = await queryRunner.manager.findOne(PurchaseOrder, {
+          where: { djbH },
+        });
+
+        if (order) {
+          // 如果订单状态为"已确认"，首次反馈时更新为"进行中"
+          if (order.orderStatus === '已确认') {
+            await queryRunner.manager.update(
+              PurchaseOrder,
+              { djbH },
+              { 
+                feedbackStatus: orderFeedbackStatus,
+                orderStatus: '进行中'
+              },
+            );
+            console.log(`Updated order ${djbH} status from "已确认" to "进行中", feedback status to ${orderFeedbackStatus}`);
+          } else {
+            // 只更新反馈状态
+            await queryRunner.manager.update(
+              PurchaseOrder,
+              { djbH },
+              { feedbackStatus: orderFeedbackStatus },
+            );
+            console.log(`Updated order ${djbH} feedback status to ${orderFeedbackStatus}`);
+          }
+        }
       }
 
       await queryRunner.commitTransaction();
@@ -356,24 +377,24 @@ export class FeedbackService {
     
     const total = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus = :status', { status: '已确认' })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
       .getCount();
 
     const completed = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus = :status', { status: '已确认' })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
       .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '已完成' })
       .getCount();
 
     const inProgress = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus = :status', { status: '已确认' })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
       .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '进行中' })
       .getCount();
 
     const delayed = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus = :status', { status: '已确认' })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
       .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '已延期' })
       .getCount();
 
@@ -422,7 +443,7 @@ export class FeedbackService {
     
     const queryBuilder = orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus = :status', { status: '已确认' });
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] });
 
     if (djbH) {
       queryBuilder.andWhere('order.djbH LIKE :djbH', { djbH: `%${djbH}%` });
@@ -451,15 +472,7 @@ export class FeedbackService {
           .addOrderBy('plan.createTime', 'DESC')
           .getMany();
 
-        const latestVersions = new Map<string, any>();
-        plans.forEach((plan: any) => {
-          const key = `${plan.purchaseDetailsId}_${plan.planClass}`;
-          if (!latestVersions.has(key) || plan.version > latestVersions.get(key).version) {
-            latestVersions.set(key, plan);
-          }
-        });
-
-        const latestPlans = Array.from(latestVersions.values());
+        const latestPlans = plans;
 
         // 为每个计划添加进展状态和上期反馈数据
         const plansWithStatus = await Promise.all(
@@ -467,9 +480,7 @@ export class FeedbackService {
             // 查询反馈主表获取进展状态
             const feedbackMain = await this.feedbackMainRepository.findOne({
               where: {
-                purchaseDetailsId: plan.purchaseDetailsId?.toString(),
-                materialCode: plan.materialCode,
-                planClass: plan.planClass,
+                productionPlanId: plan.id,
               },
               order: { createTime: 'DESC' },
               relations: ['versions'],

@@ -1,9 +1,18 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Reflector } from '@nestjs/core';
 import { PermissionService } from '../permission.service';
+export declare const PERMISSION_KEY = "permission";
+export declare function RequirePermission(permission: string): import("@nestjs/common").CustomDecorator<string>;
 export declare class PermissionGuard implements CanActivate {
+    private reflector;
     private permissionService;
-    constructor(permissionService: PermissionService);
-    canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean>;
+    constructor(reflector: Reflector, permissionService: PermissionService);
+    canActivate(context: ExecutionContext): Promise<boolean>;
 }
-export declare function RequirePermission(permission: string): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+export declare function RequirePermissions(...permissions: string[]): import("@nestjs/common").CustomDecorator<string>;
+export declare class PermissionsGuard implements CanActivate {
+    private reflector;
+    private permissionService;
+    constructor(reflector: Reflector, permissionService: PermissionService);
+    canActivate(context: ExecutionContext): Promise<boolean>;
+}

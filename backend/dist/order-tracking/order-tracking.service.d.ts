@@ -30,17 +30,12 @@ export declare class OrderTrackingService {
         changedItems: number;
         comparison: any[];
     }>;
-    getFeedbackHistory(djbH: string): Promise<{
-        djbH: string;
-        totalRecords: number;
-        groupedByCycle: any;
-        allRecords: any[];
-    }>;
     getOrderStatistics(): Promise<{
         total: number;
         pending: number;
-        processing: number;
+        confirmed: number;
+        inProgress: number;
         completed: number;
+        delayed: number;
     }>;
-    private formatDateToCycle;
 }

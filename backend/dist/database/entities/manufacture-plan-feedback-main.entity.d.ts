@@ -2,6 +2,7 @@ import { ManufacturePlanFeedbackVersion } from './manufacture-plan-feedback-vers
 export declare class ManufacturePlanFeedbackMain {
     id: string;
     purchaseDetailsId: string;
+    productionPlanId: string;
     setCount: string;
     drawingNo: string;
     sfzz: string;

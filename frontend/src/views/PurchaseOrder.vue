@@ -93,9 +93,8 @@
             </template>
           </el-table-column>
           <el-table-column prop="setCount" label="台份" width="100" />
-          <el-table-column label="操作" width="180" fixed="right">
+          <el-table-column label="操作" width="120" fixed="right">
             <template #default="scope">
-              <el-button size="small" @click="handleViewDetail(scope.row)">详情</el-button>
               <el-button size="small" type="primary" @click="handleSingleIssueTask(scope.row)">下发</el-button>
             </template>
           </el-table-column>
@@ -138,59 +137,6 @@
         </span>
       </template>
     </el-dialog>
-
-    <!-- 详情对话框 -->
-    <div class="order-detail-wrapper" v-if="detailDialogVisible">
-      <!-- 遮罩层 -->
-      <div class="order-detail-overlay" @click="detailDialogVisible = false"></div>
-      <!-- 详情面板 -->
-      <div class="order-detail-panel">
-        <div class="order-detail-header-panel">
-          <h3>采购订单明细</h3>
-          <el-button type="text" @click="detailDialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
-        </div>
-        
-        <div class="order-detail-content">
-          <div class="order-detail-header">
-            <div class="detail-info">
-              <span class="info-item">订单编号: {{ currentOrder?.djbH }}</span>
-              <span class="info-item">申请人: {{ currentOrder?.applyUsername }}</span>
-              <span class="info-item">申请部门: {{ currentOrder?.applyDept }}</span>
-              <span class="info-item">供应商: {{ currentOrder?.supplierName }}</span>
-              <span class="info-item">订单状态: <el-tag :type="getStatusType(currentOrder?.orderStatus)">{{ getStatusText(currentOrder?.orderStatus) }}</el-tag></span>
-            </div>
-          </div>
-          
-          <div class="detail-list-container">
-            <el-table :data="orderDetails" style="width: 100%" :loading="detailLoading">
-              <el-table-column prop="id" label="明细ID" width="120" />
-              <el-table-column prop="bpm_cgdd_instance_id" label="采购订单实例ID" width="200" />
-              <el-table-column prop="material_code" label="物料编码" />
-              <el-table-column prop="material_name" label="物料名称" />
-              <el-table-column prop="specification" label="规格型号" width="180" />
-              <el-table-column prop="unit" label="单位" width="80" />
-              <el-table-column prop="quantity" label="数量" width="100" />
-              <el-table-column prop="price" label="单价" width="100" />
-              <el-table-column prop="amount" label="金额" width="120" />
-              <el-table-column prop="delivery_date" label="交货日期" width="150" />
-              <el-table-column prop="order_status" label="订单状态" width="120">
-                <template #default="scope">
-                  <el-tag :type="getStatusType(scope.row.order_status)">
-                    {{ getStatusText(scope.row.order_status) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-          
-          <div class="order-detail-footer">
-            <el-button @click="detailDialogVisible = false">关闭</el-button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -198,7 +144,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { Refresh, View, Close } from '@element-plus/icons-vue';
+import { Refresh, View } from '@element-plus/icons-vue';
 import { purchaseOrderApi } from '../api';
 
 // 路由
@@ -246,12 +192,6 @@ const issueTaskForm = reactive({
   description: '',
   dueDate: ''
 });
-
-// 详情对话框
-const detailDialogVisible = ref(false);
-const currentOrder = ref<any>(null);
-const orderDetails = ref<any[]>([]);
-const detailLoading = ref(false);
 
 const issueTaskRules = {
   supplierId: [
@@ -375,35 +315,6 @@ const handleCurrentChange = (current: number) => {
 
 
 
-// 查看详情
-const handleViewDetail = async (row: any) => {
-  currentOrder.value = row;
-  detailDialogVisible.value = true;
-  
-  // 加载采购订单明细数据
-  detailLoading.value = true;
-  try {
-    // 使用bpmCgddInstanceId作为过滤条件（注意：后端实体使用驼峰命名）
-    const bpmCgddInstanceId = row.bpmCgddInstanceId || row.bpm_cgdd_instance_id;
-    
-    if (!bpmCgddInstanceId) {
-      ElMessage.warning('订单缺少实例ID，无法加载明细数据');
-      orderDetails.value = [];
-      return;
-    }
-    
-    // 调用后端API获取采购订单明细
-    const response = await purchaseOrderApi.getDetail(row.id.toString());
-    orderDetails.value = response.data?.details || [];
-  } catch (error) {
-    console.error('Load order detail error:', error);
-    ElMessage.error('加载明细数据失败');
-    orderDetails.value = [];
-  } finally {
-    detailLoading.value = false;
-  }
-};
-
 // 选择行变化
 const handleSelectionChange = (rows: any[]) => {
   selectedRows.value = rows;
@@ -525,168 +436,5 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-}
-
-/* 自定义详情对话框样式 - 从右侧弹出 */
-:deep(.order-detail-dialog) {
-  position: fixed !important;
-  right: 0 !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  width: 75% !important;
-  margin: 0 !important;
-  left: auto !important;
-  border-radius: 0 !important;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15) !important;
-  animation: slide-in-right 0.3s ease-out !important;
-}
-
-:deep(.order-detail-dialog) .el-dialog__header {
-  border-bottom: 1px solid #ebeef5 !important;
-  padding: 20px !important;
-}
-
-:deep(.order-detail-dialog) .el-dialog__body {
-  padding: 20px !important;
-  height: calc(100% - 120px) !important;
-  max-height: 70vh !important;
-  overflow-y: auto !important;
-}
-
-:deep(.order-detail-dialog) .el-dialog__footer {
-  border-top: 1px solid #ebeef5 !important;
-  padding: 20px !important;
-  text-align: right !important;
-}
-
-/* 从右侧滑入动画 */
-@keyframes slide-in-right {
-  from {
-    transform: translateX(100%) !important;
-    opacity: 0 !important;
-  }
-  to {
-    transform: translateX(0) !important;
-    opacity: 1 !important;
-  }
-}
-
-/* 详情对话框样式 - 从右侧弹出 */
-.order-detail-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-}
-
-.order-detail-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  animation: fade-in 0.3s ease-out;
-}
-
-.order-detail-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 75%;
-  background-color: white;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
-  animation: slide-in-right 0.3s ease-out;
-  display: flex;
-  flex-direction: column;
-}
-
-.order-detail-header-panel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #ebeef5;
-  background-color: #fafafa;
-}
-
-.order-detail-header-panel h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.close-btn {
-  font-size: 16px;
-  color: #909399;
-}
-
-.close-btn:hover {
-  color: #606266;
-}
-
-.order-detail-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.order-detail-header {
-  padding: 20px;
-  border-bottom: 1px solid #ebeef5;
-  background-color: #fafafa;
-}
-
-.detail-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: center;
-}
-
-.info-item {
-  font-size: 14px;
-  color: #606266;
-}
-
-.detail-list-container {
-  flex: 1;
-  padding: 20px;
-  overflow: auto;
-}
-
-.order-detail-footer {
-  padding: 20px;
-  border-top: 1px solid #ebeef5;
-  background-color: #fafafa;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-/* 动画效果 */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
 }
 </style>

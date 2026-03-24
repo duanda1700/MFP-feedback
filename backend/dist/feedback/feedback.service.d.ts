@@ -3,13 +3,15 @@ import { ManufacturePlanFeedbackMain } from '../database/entities/manufacture-pl
 import { ManufacturePlanFeedbackVersion } from '../database/entities/manufacture-plan-feedback-version.entity';
 import { ProductionPlan } from '../database/entities/production-plan.entity';
 import { PurchaseOrder } from '../database/entities/purchase-order.entity';
+import { TodoTaskService } from '../todo/todo-task.service';
 export declare class FeedbackService {
     private feedbackMainRepository;
     private feedbackVersionRepository;
     private productionPlanRepository;
     private purchaseOrderRepository;
     private dataSource;
-    constructor(feedbackMainRepository: Repository<ManufacturePlanFeedbackMain>, feedbackVersionRepository: Repository<ManufacturePlanFeedbackVersion>, productionPlanRepository: Repository<ProductionPlan>, purchaseOrderRepository: Repository<PurchaseOrder>, dataSource: DataSource);
+    private todoTaskService;
+    constructor(feedbackMainRepository: Repository<ManufacturePlanFeedbackMain>, feedbackVersionRepository: Repository<ManufacturePlanFeedbackVersion>, productionPlanRepository: Repository<ProductionPlan>, purchaseOrderRepository: Repository<PurchaseOrder>, dataSource: DataSource, todoTaskService: TodoTaskService);
     getFeedbackList(query: any): Promise<{
         data: ManufacturePlanFeedbackMain[];
         total: number;

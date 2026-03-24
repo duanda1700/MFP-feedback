@@ -24,8 +24,14 @@
       </el-card>
       <el-card shadow="hover" class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ statistics.processing }}</div>
-          <div class="stat-label">处理中</div>
+          <div class="stat-number">{{ statistics.confirmed }}</div>
+          <div class="stat-label">已确认</div>
+        </div>
+      </el-card>
+      <el-card shadow="hover" class="stat-card">
+        <div class="stat-content">
+          <div class="stat-number">{{ statistics.inProgress }}</div>
+          <div class="stat-label">进行中</div>
         </div>
       </el-card>
       <el-card shadow="hover" class="stat-card">
@@ -58,6 +64,14 @@
               </div>
               <div class="order-date">{{ formatDate(order.createTime) }}</div>
             </div>
+            <el-alert
+              v-if="order.feedbackStatus === '已延期'"
+              title="该订单已延期，请及时跟进处理"
+              type="error"
+              :closable="false"
+              show-icon
+              class="delay-alert"
+            />
             <div class="order-details">
               <div class="detail-item">
                 <label>采购经理:</label>
@@ -84,16 +98,16 @@
         </div>
       </div>
 
-      <div class="status-section" v-if="ordersByStatus.processing.length > 0">
+      <div class="status-section" v-if="ordersByStatus.confirmed.length > 0">
         <div class="section-header">
           <h2 class="section-title">
-            <i class="el-icon-loading"></i> 处理中订单
-            <span class="order-count">{{ ordersByStatus.processing.length }}</span>
+            <i class="el-icon-loading"></i> 已确认订单
+            <span class="order-count">{{ ordersByStatus.confirmed.length }}</span>
           </h2>
         </div>
         <div class="order-cards">
           <el-card 
-            v-for="order in ordersByStatus.processing" 
+            v-for="order in ordersByStatus.confirmed" 
             :key="order.id"
             shadow="hover"
             class="order-card"
@@ -101,10 +115,18 @@
             <div class="order-card-header">
               <div class="order-info">
                 <h3 class="order-no">{{ order.djbH }}</h3>
-                <div class="order-status status-processing">{{ order.orderStatus }}</div>
+                <div class="order-status status-confirmed">{{ order.orderStatus }}</div>
               </div>
               <div class="order-date">{{ formatDate(order.createTime) }}</div>
             </div>
+            <el-alert
+              v-if="order.feedbackStatus === '已延期'"
+              title="该订单已延期，请及时跟进处理"
+              type="error"
+              :closable="false"
+              show-icon
+              class="delay-alert"
+            />
             <div class="order-details">
               <div class="detail-item">
                 <label>采购经理:</label>
@@ -126,7 +148,116 @@
             <div class="order-actions">
               <el-button size="small" @click="viewOrderDetail(order)">查看详情</el-button>
               <el-button size="small" type="warning" @click="openCompareDialog(order)">计划对比</el-button>
-              <el-button size="small" type="info" @click="openHistoryDialog(order)">历史反馈</el-button>
+            </div>
+          </el-card>
+        </div>
+      </div>
+
+      <div class="status-section" v-if="ordersByStatus.inProgress.length > 0">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="el-icon-loading"></i> 进行中订单
+            <span class="order-count">{{ ordersByStatus.inProgress.length }}</span>
+          </h2>
+        </div>
+        <div class="order-cards">
+          <el-card 
+            v-for="order in ordersByStatus.inProgress" 
+            :key="order.id"
+            shadow="hover"
+            class="order-card"
+          >
+            <div class="order-card-header">
+              <div class="order-info">
+                <h3 class="order-no">{{ order.djbH }}</h3>
+                <div class="order-status status-inProgress">{{ order.orderStatus }}</div>
+              </div>
+              <div class="order-date">{{ formatDate(order.createTime) }}</div>
+            </div>
+            <el-alert
+              v-if="order.feedbackStatus === '已延期'"
+              title="该订单已延期，请及时跟进处理"
+              type="error"
+              :closable="false"
+              show-icon
+              class="delay-alert"
+            />
+            <div class="order-details">
+              <div class="detail-item">
+                <label>采购经理:</label>
+                <span>{{ order.purchaseManager || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>供应商:</label>
+                <span>{{ order.supplierName || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>订单状态:</label>
+                <span>{{ order.orderStatus }}</span>
+              </div>
+              <div class="detail-item">
+                <label>反馈进度:</label>
+                <span>{{ order.feedbackProgress }}%</span>
+              </div>
+            </div>
+            <div class="order-actions">
+              <el-button size="small" @click="viewOrderDetail(order)">查看详情</el-button>
+              <el-button size="small" type="warning" @click="openCompareDialog(order)">计划对比</el-button>
+            </div>
+          </el-card>
+        </div>
+      </div>
+
+      <div class="status-section" v-if="ordersByStatus.delayed.length > 0">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="el-icon-warning"></i> 已延期订单
+            <span class="order-count">{{ ordersByStatus.delayed.length }}</span>
+          </h2>
+        </div>
+        <div class="order-cards">
+          <el-card 
+            v-for="order in ordersByStatus.delayed" 
+            :key="order.id"
+            shadow="hover"
+            class="order-card"
+          >
+            <div class="order-card-header">
+              <div class="order-info">
+                <h3 class="order-no">{{ order.djbH }}</h3>
+                <div class="order-status status-delayed">{{ order.orderStatus }}</div>
+              </div>
+              <div class="order-date">{{ formatDate(order.createTime) }}</div>
+            </div>
+            <el-alert
+              v-if="order.feedbackStatus === '已延期'"
+              title="该订单已延期，请及时跟进处理"
+              type="error"
+              :closable="false"
+              show-icon
+              class="delay-alert"
+            />
+            <div class="order-details">
+              <div class="detail-item">
+                <label>采购经理:</label>
+                <span>{{ order.purchaseManager || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>供应商:</label>
+                <span>{{ order.supplierName || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>订单状态:</label>
+                <span>{{ order.orderStatus }}</span>
+              </div>
+              <div class="detail-item">
+                <label>反馈进度:</label>
+                <span>{{ order.feedbackProgress }}%</span>
+              </div>
+            </div>
+            <div class="order-actions">
+              <el-button size="small" @click="viewOrderDetail(order)">查看详情</el-button>
+              <el-button size="small" type="warning" @click="openCompareDialog(order)">计划对比</el-button>
             </div>
           </el-card>
         </div>
@@ -153,6 +284,14 @@
               </div>
               <div class="order-date">{{ formatDate(order.createTime) }}</div>
             </div>
+            <el-alert
+              v-if="order.feedbackStatus === '已延期'"
+              title="该订单已延期，请及时跟进处理"
+              type="error"
+              :closable="false"
+              show-icon
+              class="delay-alert"
+            />
             <div class="order-details">
               <div class="detail-item">
                 <label>采购经理:</label>
@@ -169,7 +308,6 @@
             </div>
             <div class="order-actions">
               <el-button size="small" @click="viewOrderDetail(order)">查看详情</el-button>
-              <el-button size="small" type="info" @click="openHistoryDialog(order)">历史反馈</el-button>
             </div>
           </el-card>
         </div>
@@ -319,58 +457,6 @@
     </el-dialog>
 
     <el-dialog 
-      v-model="historyDialogVisible" 
-      :title="`历史反馈记录 - ${currentOrder?.djbH || ''}`"
-      width="90%"
-      top="5vh"
-    >
-      <div v-if="historyLoading" style="text-align: center; padding: 40px;">
-        <el-icon class="is-loading" :size="40"><Loading /></el-icon>
-        <p>加载中...</p>
-      </div>
-      <div v-else-if="historyData" class="history-content">
-        <el-alert 
-          :title="`共 ${historyData.totalRecords} 条反馈记录`" 
-          type="info" 
-          show-icon 
-          style="margin-bottom: 16px;"
-        />
-        
-        <el-tabs v-if="Object.keys(historyData.groupedByCycle).length > 0">
-          <el-tab-pane 
-            v-for="(records, cycle) in historyData.groupedByCycle" 
-            :key="cycle" 
-            :label="`${cycle} (${records.length})`"
-          >
-            <el-table :data="records" border stripe max-height="400">
-              <el-table-column type="index" label="序号" width="60" />
-              <el-table-column prop="materialCode" label="物料编码" width="120" />
-              <el-table-column prop="materialDesc" label="物料描述" min-width="150" show-overflow-tooltip />
-              <el-table-column prop="planClass" label="计划分类" width="120" />
-              <el-table-column prop="progressStatus" label="进展状态" width="100">
-                <template #default="scope">
-                  <el-tag :type="getFeedbackStatusType(scope.row.progressStatus)" size="small">
-                    {{ scope.row.progressStatus }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="finishedQuantity" label="完成数量" width="100" />
-              <el-table-column prop="planQuantity" label="计划数量" width="100" />
-              <el-table-column prop="actualDeliveryDate" label="实际交付日期" width="120">
-                <template #default="scope">
-                  {{ scope.row.actualDeliveryDate ? formatDate(scope.row.actualDeliveryDate) : '-' }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="remarks" label="备注" min-width="150" show-overflow-tooltip />
-              <el-table-column prop="creator" label="填报人" width="100" />
-            </el-table>
-          </el-tab-pane>
-        </el-tabs>
-        <el-empty v-else description="暂无历史反馈记录" />
-      </div>
-    </el-dialog>
-
-    <el-dialog 
       v-model="planHistoryDialogVisible" 
       title="计划反馈历史"
       width="70%"
@@ -409,14 +495,17 @@ import { orderTrackingApi } from '../api';
 
 const ordersByStatus = ref<any>({
   pending: [],
-  processing: [],
-  completed: []
+  confirmed: [],
+  inProgress: [],
+  completed: [],
+  delayed: []
 });
 
 const statistics = ref({
   total: 0,
   pending: 0,
-  processing: 0,
+  confirmed: 0,
+  inProgress: 0,
   completed: 0
 });
 
@@ -430,10 +519,6 @@ const orderDetail = ref<any>(null);
 const compareDialogVisible = ref(false);
 const compareLoading = ref(false);
 const compareData = ref<any>(null);
-
-const historyDialogVisible = ref(false);
-const historyLoading = ref(false);
-const historyData = ref<any>(null);
 
 const planHistoryDialogVisible = ref(false);
 const currentPlanHistory = ref<any[]>([]);
@@ -556,22 +641,6 @@ const openCompareDialog = async (order: any) => {
     console.error('加载计划对比数据失败:', error);
   } finally {
     compareLoading.value = false;
-  }
-};
-
-const openHistoryDialog = async (order: any) => {
-  currentOrder.value = order;
-  historyDialogVisible.value = true;
-  historyLoading.value = true;
-  
-  try {
-    const response: any = await orderTrackingApi.getHistory(order.djbH);
-    historyData.value = response;
-  } catch (error) {
-    ElMessage.error('加载历史反馈数据失败');
-    console.error('加载历史反馈数据失败:', error);
-  } finally {
-    historyLoading.value = false;
   }
 };
 
@@ -730,14 +799,33 @@ onMounted(() => {
   color: #fa8c16;
 }
 
-.status-processing {
+.status-confirmed {
   background-color: #e6f7ff;
   color: #1890ff;
+}
+
+.status-inProgress {
+  background-color: #f0f5ff;
+  color: #2f54eb;
 }
 
 .status-completed {
   background-color: #f6ffed;
   color: #52c41a;
+}
+
+.status-delayed {
+  background-color: #fff1f0;
+  color: #f5222d;
+}
+
+.delay-alert {
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.delay-alert :deep(.el-alert__content) {
+  padding: 0;
 }
 
 .order-date {
