@@ -29,23 +29,21 @@ export class AuthController {
 
   @Post('refresh')
   async refreshToken(@Request() req) {
-    // 从请求头中获取 token
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      return { message: 'No token provided' };
+      throw new UnauthorizedException('No token provided');
     }
     
     const token = authHeader.replace('Bearer ', '');
     try {
-      // 验证 token 是否有效
       const decoded = this.jwtService.verify(token, { secret: 'your-secret-key' });
       const user = await this.authService.getUserById(decoded.sub);
       if (!user) {
-        return { message: 'User not found' };
+        throw new UnauthorizedException('User not found');
       }
       return this.authService.refreshToken(user);
     } catch (error) {
-      return { message: 'Invalid token' };
+      throw new UnauthorizedException('Invalid token');
     }
   }
 

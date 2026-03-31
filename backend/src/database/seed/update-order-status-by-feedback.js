@@ -47,7 +47,7 @@ async function updateOrderStatusByFeedback() {
     const [progressRecords] = await connection.execute(`
       SELECT id, djbH, order_status, feedback_status 
       FROM PURCHASE_ORDER 
-      WHERE feedback_status IN ('进行中', '已延期') 
+      WHERE feedback_status = '进行中' 
       AND order_status != '进行中'
     `);
     console.log(`需要更新为"进行中"的记录：${progressRecords.length} 条`);
@@ -55,6 +55,20 @@ async function updateOrderStatusByFeedback() {
       console.log('详情：');
       progressRecords.forEach(r => {
         console.log(`  - ${r.djbH}: ${r.order_status} -> 进行中 (反馈状态: ${r.feedback_status})`);
+      });
+    }
+
+    const [delayedRecords] = await connection.execute(`
+      SELECT id, djbH, order_status, feedback_status 
+      FROM PURCHASE_ORDER 
+      WHERE feedback_status = '已延期' 
+      AND order_status != '已延期'
+    `);
+    console.log(`\n需要更新为"已延期"的记录：${delayedRecords.length} 条`);
+    if (delayedRecords.length > 0) {
+      console.log('详情：');
+      delayedRecords.forEach(r => {
+        console.log(`  - ${r.djbH}: ${r.order_status} -> 已延期 (反馈状态: ${r.feedback_status})`);
       });
     }
 
@@ -72,7 +86,7 @@ async function updateOrderStatusByFeedback() {
       });
     }
 
-    const totalToUpdate = progressRecords.length + completedRecords.length;
+    const totalToUpdate = progressRecords.length + delayedRecords.length + completedRecords.length;
     console.log(`\n总计待更新：${totalToUpdate} 条记录\n`);
 
     if (totalToUpdate === 0) {
@@ -90,27 +104,39 @@ async function updateOrderStatusByFeedback() {
 
     try {
       let updatedInProgress = 0;
+      let updatedDelayed = 0;
       let updatedCompleted = 0;
 
       if (progressRecords.length > 0) {
         const [result1] = await connection.execute(`
           UPDATE PURCHASE_ORDER 
           SET order_status = '进行中' 
-          WHERE feedback_status IN ('进行中', '已延期') 
+          WHERE feedback_status = '进行中' 
           AND order_status != '进行中'
         `);
         updatedInProgress = result1.affectedRows;
         console.log(`✓ 已更新 ${updatedInProgress} 条记录为"进行中"`);
       }
 
-      if (completedRecords.length > 0) {
+      if (delayedRecords.length > 0) {
         const [result2] = await connection.execute(`
+          UPDATE PURCHASE_ORDER 
+          SET order_status = '已延期' 
+          WHERE feedback_status = '已延期' 
+          AND order_status != '已延期'
+        `);
+        updatedDelayed = result2.affectedRows;
+        console.log(`✓ 已更新 ${updatedDelayed} 条记录为"已延期"`);
+      }
+
+      if (completedRecords.length > 0) {
+        const [result3] = await connection.execute(`
           UPDATE PURCHASE_ORDER 
           SET order_status = '已完成' 
           WHERE feedback_status = '已完成' 
           AND order_status != '已完成'
         `);
-        updatedCompleted = result2.affectedRows;
+        updatedCompleted = result3.affectedRows;
         console.log(`✓ 已更新 ${updatedCompleted} 条记录为"已完成"`);
       }
 
@@ -122,9 +148,15 @@ async function updateOrderStatusByFeedback() {
 
       const [verifyProgress] = await connection.execute(`
         SELECT COUNT(*) as count FROM PURCHASE_ORDER 
-        WHERE feedback_status IN ('进行中', '已延期') AND order_status = '进行中'
+        WHERE feedback_status = '进行中' AND order_status = '进行中'
       `);
-      console.log(`反馈状态为"进行中/已延期"且订单状态为"进行中"的记录：${verifyProgress[0].count} 条`);
+      console.log(`反馈状态为"进行中"且订单状态为"进行中"的记录：${verifyProgress[0].count} 条`);
+
+      const [verifyDelayed] = await connection.execute(`
+        SELECT COUNT(*) as count FROM PURCHASE_ORDER 
+        WHERE feedback_status = '已延期' AND order_status = '已延期'
+      `);
+      console.log(`反馈状态为"已延期"且订单状态为"已延期"的记录：${verifyDelayed[0].count} 条`);
 
       const [verifyCompleted] = await connection.execute(`
         SELECT COUNT(*) as count FROM PURCHASE_ORDER 
@@ -135,7 +167,8 @@ async function updateOrderStatusByFeedback() {
       const [verifyMismatch] = await connection.execute(`
         SELECT id, djbH, order_status, feedback_status FROM PURCHASE_ORDER 
         WHERE (
-          (feedback_status IN ('进行中', '已延期') AND order_status != '进行中')
+          (feedback_status = '进行中' AND order_status != '进行中')
+          OR (feedback_status = '已延期' AND order_status != '已延期')
           OR (feedback_status = '已完成' AND order_status != '已完成')
         )
         AND feedback_status IS NOT NULL
@@ -156,8 +189,9 @@ async function updateOrderStatusByFeedback() {
       console.log(`  - 无效反馈状态记录：${invalidOrders.length} 条`);
       console.log(`\n更新统计：`);
       console.log(`  - 更新为"进行中"：${updatedInProgress} 条`);
+      console.log(`  - 更新为"已延期"：${updatedDelayed} 条`);
       console.log(`  - 更新为"已完成"：${updatedCompleted} 条`);
-      console.log(`  - 总计更新：${updatedInProgress + updatedCompleted} 条`);
+      console.log(`  - 总计更新：${updatedInProgress + updatedDelayed + updatedCompleted} 条`);
       console.log(`\n异常情况：无`);
       console.log(`\n状态：✓ 更新成功完成`);
 

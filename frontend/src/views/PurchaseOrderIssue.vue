@@ -160,9 +160,11 @@
               <el-input v-model="scope.row.materialCode" placeholder="请输入物料编码"></el-input>
             </template>
           </el-table-column>
-          <el-table-column prop="materialDesc" label="物料描述" min-width="200">
+          <el-table-column prop="materialDesc" label="物料描述/工艺工序描述" min-width="200">
             <template #default="scope">
-              <el-input v-model="scope.row.materialDesc" placeholder="请输入物料描述"></el-input>
+              <div :class="{ 'new-row-cell': scope.row.isNewRow }">
+                <el-input v-model="scope.row.materialDesc" placeholder="请输入物料描述"></el-input>
+              </div>
             </template>
           </el-table-column>
           <el-table-column prop="quantity" label="数量" width="100">
@@ -185,7 +187,7 @@
               {{ scope.row.changeType || '-' }}
             </template>
           </el-table-column>
-          <el-table-column prop="sfzz" label="是否自制" width="120">
+          <el-table-column prop="sfzz" label="是否自制" width="120" class-name="highlight-column">
             <template #default="scope">
               <el-select v-model="scope.row.sfzz" placeholder="请选择" clearable>
                 <el-option label="自制" value="自制"></el-option>
@@ -194,12 +196,12 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column prop="plannedDate" label="计划日期" width="180">
+          <el-table-column prop="plannedDate" label="计划日期" width="180" class-name="highlight-column">
             <template #default="scope">
               <el-date-picker v-model="scope.row.plannedDate" type="date" placeholder="计划日期" style="width: 100%"></el-date-picker>
             </template>
           </el-table-column>
-          <el-table-column prop="remarks" label="备注" min-width="200">
+          <el-table-column prop="remarks" label="备注" min-width="200" class-name="highlight-column">
             <template #default="scope">
               <el-input v-model="scope.row.remarks" placeholder="请输入备注"></el-input>
             </template>
@@ -489,7 +491,6 @@ const tableRowClassName = ({ row }: { row: any }) => {
 
 // 添加模板行
 const addTemplateItem = (index: number) => {
-  // 获取当前行的purchaseDetailsId（如果存在）
   const currentRow = index > 0 ? planFeedbackTemplate.value[index - 1] : null;
   const purchaseDetailsId = currentRow?.purchaseDetailsId || 0;
   const jhrq = currentRow?.jhrq || null;
@@ -497,8 +498,8 @@ const addTemplateItem = (index: number) => {
   const drawingNo = currentRow?.drawingNo || '';
   const changeType = currentRow?.changeType || '';
   const sfzz = currentRow?.sfzz || '';
+  const materialCode = currentRow?.materialCode || '';
   
-  // 计算当前最大的sortOrder值
   const maxSortOrder = planFeedbackTemplate.value.reduce((max, item) => {
     return Math.max(max, item.sortOrder || 0);
   }, 0);
@@ -511,7 +512,7 @@ const addTemplateItem = (index: number) => {
     planClass: '',
     planType: '',
     planStatus: '待确认',
-    materialCode: '',
+    materialCode: materialCode,
     materialDesc: '',
     quantity: 0,
     jhrq: jhrq,
@@ -519,8 +520,9 @@ const addTemplateItem = (index: number) => {
     plannedDate: '',
     finishedQuantity: 0,
     remarks: '',
-    purchaseDetailsId: purchaseDetailsId, // 继承当前行的purchaseDetailsId
-    sortOrder: maxSortOrder + 1 // 设置为最大值+1
+    purchaseDetailsId: purchaseDetailsId,
+    sortOrder: maxSortOrder + 1,
+    isNewRow: true
   };
   if (index !== undefined) {
     planFeedbackTemplate.value.splice(index, 0, newItem);
@@ -618,12 +620,16 @@ const confirmSubmit = async () => {
     
     console.log('Confirming plans:', plans);
     
+    // 判断是否是首次确认（订单状态为"已下发"时为首次确认）
+    const isFirstConfirmation = order.value?.orderStatus === '已下发';
+    
     // 批量导入计划
     const response = await productionPlanApi.import({
       plans: plans,
       createdBy: 1,
       createdName: '系统',
-      orderId: orderId.value
+      orderId: orderId.value,
+      isFirstConfirmation: isFirstConfirmation
     });
     console.log('Import response:', response);
     
@@ -689,22 +695,13 @@ const loadExistingPlans = async () => {
     if (response.data && response.data.length > 0) {
       let plans = response.data;
       
-      // 如果订单状态为"已确认"，只显示plan_status为"已确认"且version最大的条目
-      if (order.value?.orderStatus === '已确认') {
-        console.log('Order status is "已确认", filtering plans...');
-        
-        // 找出最大的version
-        const maxVersion = Math.max(...plans.map((p: any) => p.version || 1));
-        console.log('Max version:', maxVersion);
-        
-        // 过滤出plan_status为"已确认"且version最大的条目
-        plans = plans.filter((p: any) => 
-          p.planStatus === '已确认' && (p.version || 1) === maxVersion
-        );
-        console.log('Filtered plans count:', plans.length);
-      }
+      // 无论订单状态如何，只显示version最大的条目
+      const maxVersion = Math.max(...plans.map((p: any) => p.version || 1));
+      console.log('Max version:', maxVersion);
       
-      // 如果有已生成的生产计划，直接显示
+      plans = plans.filter((p: any) => (p.version || 1) === maxVersion);
+      console.log('Filtered plans count:', plans.length);
+      
       planFeedbackTemplate.value = plans.map((plan: any) => ({
         setCount: plan.setCount,
         drawingNo: plan.drawingNo,
@@ -722,7 +719,7 @@ const loadExistingPlans = async () => {
         finishedQuantity: plan.finishedQuantity || 0,
         remarks: plan.remarks || '',
         purchaseDetailsId: plan.purchaseDetailsId,
-        sortOrder: plan.sortOrder || 0, // 保留sort_order
+        sortOrder: plan.sortOrder || 0,
         id: plan.id
       }));
       console.log('Loaded existing plans:', planFeedbackTemplate.value.length);
@@ -842,5 +839,20 @@ onMounted(() => {
 :deep(.process-plan-row:hover),
 :deep(.compliance-plan-row:hover) {
   background-color: #f0f9ff !important;
+}
+
+.new-row-cell {
+  background-color: #e6f4ff;
+  padding: 8px;
+  border-radius: 4px;
+  min-height: 32px;
+}
+
+:deep(.highlight-column) {
+  background-color: #e6f4ff !important;
+}
+
+:deep(.el-table__row .highlight-column) {
+  background-color: #e6f4ff !important;
 }
 </style>

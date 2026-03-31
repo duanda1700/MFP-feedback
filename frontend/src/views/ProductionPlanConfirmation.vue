@@ -27,10 +27,11 @@
           
           <el-form-item label="订单状态">
             <el-select v-model="searchForm.orderStatus" placeholder="请选择订单状态">
-              <el-option label="全部" value="已下发,已确认,进行中" />
+              <el-option label="全部" value="已下发,已确认,进行中,已延期" />
               <el-option label="已下发" value="已下发" />
               <el-option label="已确认" value="已确认" />
               <el-option label="进行中" value="进行中" />
+              <el-option label="已延期" value="已延期" />
             </el-select>
           </el-form-item>
           
@@ -129,7 +130,7 @@ const total = ref<number>(0);
 // 搜索表单
 const searchForm = reactive({
   orderId: '',
-  orderStatus: '已下发,已确认,进行中'
+  orderStatus: '已下发,已确认,进行中,已延期'
 });
 
 // 分页
@@ -154,6 +155,8 @@ const getStatusType = (status: string) => {
       return 'info';
     case '已下发':
       return 'success';
+    case '已延期':
+      return 'danger';
     default:
       return 'info';
   }
@@ -230,7 +233,7 @@ const handleSearch = async () => {
 // 重置搜索
 const resetSearch = () => {
   searchForm.orderId = '';
-  searchForm.orderStatus = '已下发,已确认,进行中';
+  searchForm.orderStatus = '已下发,已确认,进行中,已延期';
   pagination.currentPage = 1;
   handleSearch();
 };

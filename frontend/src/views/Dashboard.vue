@@ -55,27 +55,6 @@
     <div class="secondary-stats-container">
       <el-card class="secondary-stats-card">
         <div class="secondary-stats-header">
-          <el-icon><i-ep-document /></el-icon>
-          <span>生产计划</span>
-        </div>
-        <div class="secondary-stats-content">
-          <div class="stat-item">
-            <span class="stat-value">{{ statistics.plans?.total || 0 }}</span>
-            <span class="stat-label">总数</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value confirmed">{{ statistics.plans?.confirmed || 0 }}</span>
-            <span class="stat-label">已确认</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value pending">{{ statistics.plans?.pending || 0 }}</span>
-            <span class="stat-label">待确认</span>
-          </div>
-        </div>
-      </el-card>
-      
-      <el-card class="secondary-stats-card">
-        <div class="secondary-stats-header">
           <el-icon><i-ep-edit /></el-icon>
           <span>进度反馈</span>
         </div>
@@ -210,7 +189,22 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import * as echarts from 'echarts';
+import * as echarts from 'echarts/core';
+import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
+import { LineChart, PieChart } from 'echarts/charts';
+import { UniversalTransition } from 'echarts/features';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([
+  GridComponent, 
+  TooltipComponent, 
+  LegendComponent, 
+  LineChart, 
+  PieChart,
+  CanvasRenderer, 
+  UniversalTransition
+]);
+
 import { dashboardApi } from '../api';
 
 const orderStatusChartRef = ref<HTMLElement>();

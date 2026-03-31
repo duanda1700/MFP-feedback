@@ -85,11 +85,9 @@ export class PlanService {
   }
 
   // 导入计划
-  async importPlan(planDataList: any[], createdBy: number, createdName: string, orderId?: number) {
-    // 直接保存计划数据
+  async importPlan(planDataList: any[], createdBy: number, createdName: string, orderId?: number, isFirstConfirmation?: boolean) {
     let savedCount = 0;
     
-    // 获取第一个计划的djbH，用于查询最大版本号
     if (planDataList.length === 0) {
       return {
         success: false,
@@ -100,7 +98,6 @@ export class PlanService {
     
     const djbH = planDataList[0].djbH;
     
-    // 查询该订单的最大版本号
     const maxVersionResult = await this.planRepository
       .createQueryBuilder('plan')
       .select('MAX(plan.version)', 'maxVersion')
@@ -111,7 +108,6 @@ export class PlanService {
     console.log(`Importing plans for order ${djbH}, next version: ${nextVersion}`);
     
     for (const planData of planDataList) {
-      // 生成唯一ID
       const timestamp = Date.now().toString().slice(-10);
       const randomStr = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
       const id = `PP${timestamp}_${randomStr}`.slice(0, 16);
@@ -119,32 +115,45 @@ export class PlanService {
       const plan = this.planRepository.create({
         id: id,
         ...planData,
-        version: nextVersion, // 设置版本号
-        sortOrder: planData.sortOrder || 0 // 设置排序顺序
+        version: nextVersion,
+        sortOrder: planData.sortOrder || 0
       });
       
       await this.planRepository.save(plan);
       savedCount++;
     }
 
-    // 如果提供了orderId，更新订单状态为"已确认"
-    if (orderId) {
+    // 只有首次确认时才更新订单状态为"已确认"
+    if (orderId && isFirstConfirmation) {
       const order = await this.orderRepository.findOne({ where: { id: orderId } });
       if (order) {
         order.orderStatus = '已确认';
         await this.orderRepository.save(order);
         console.log(`Updated order ${orderId} status to "已确认"`);
         
-        // 记录操作日志
         const operationLog = this.operationLogRepository.create({
           operationType: '生产计划确认',
-          operationDesc: `订单 ${order.djbH} 确认提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
+          operationDesc: `订单 ${order.djbH} 首次确认提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
           operator: createdName,
           operatedAt: new Date(),
           relatedId: orderId.toString()
         });
         await this.operationLogRepository.save(operationLog);
         console.log(`Recorded operation log for order ${orderId}`);
+      }
+    } else if (orderId) {
+      // 更新模板场景，记录操作日志但不修改订单状态
+      const order = await this.orderRepository.findOne({ where: { id: orderId } });
+      if (order) {
+        const operationLog = this.operationLogRepository.create({
+          operationType: '生产计划更新',
+          operationDesc: `订单 ${order.djbH} 更新模板提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
+          operator: createdName,
+          operatedAt: new Date(),
+          relatedId: orderId.toString()
+        });
+        await this.operationLogRepository.save(operationLog);
+        console.log(`Recorded operation log for order ${orderId} (update template)`);
       }
     }
 

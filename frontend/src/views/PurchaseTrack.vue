@@ -408,51 +408,115 @@
     <el-dialog 
       v-model="compareDialogVisible" 
       :title="`计划模板对比 - ${currentOrder?.djbH || ''}`"
-      width="90%"
-      top="5vh"
+      width="95%"
+      top="3vh"
+      destroy-on-close
     >
       <div v-if="compareLoading" style="text-align: center; padding: 40px;">
         <el-icon class="is-loading" :size="40"><Loading /></el-icon>
         <p>加载中...</p>
       </div>
       <div v-else-if="compareData" class="compare-content">
-        <el-alert 
-          :title="`共 ${compareData.totalItems} 项计划，其中 ${compareData.changedItems} 项有变更`" 
-          type="info" 
-          show-icon 
-          style="margin-bottom: 16px;"
-        />
-        <el-table :data="compareData.comparison" border stripe max-height="500">
-          <el-table-column type="index" label="序号" width="60" />
-          <el-table-column prop="materialCode" label="物料编码" width="120" />
-          <el-table-column prop="materialDesc" label="物料描述" min-width="150" show-overflow-tooltip />
-          <el-table-column prop="planClass" label="计划分类" width="120" />
-          <el-table-column label="版本" width="100">
-            <template #default="scope">
-              {{ scope.row.originalVersion }} → {{ scope.row.latestVersion }}
-            </template>
-          </el-table-column>
-          <el-table-column label="变更内容" min-width="200">
-            <template #default="scope">
-              <div v-if="scope.row.changes.hasChanges">
-                <div v-for="(change, idx) in scope.row.changes.fields" :key="idx" class="change-item">
-                  <span class="change-field">{{ getFieldName(change.field) }}:</span>
-                  <span class="change-old">{{ change.original || '-' }}</span>
-                  <span class="change-arrow">→</span>
-                  <span class="change-new">{{ change.latest || '-' }}</span>
+        <div class="compare-header">
+          <el-alert 
+            :title="`共 ${compareData.totalItems} 项计划，${compareData.versions?.length || 0} 个版本，其中 ${compareData.changedItems} 项有变更`" 
+            type="info" 
+            show-icon 
+            style="margin-bottom: 16px;"
+          />
+          <div class="version-selector" v-if="compareData.versions?.length > 1">
+            <span class="selector-label">选择对比版本：</span>
+            <el-select v-model="selectedCompareVersions" multiple placeholder="选择要对比的版本" style="width: 300px;">
+              <el-option
+                v-for="v in compareData.versions"
+                :key="v"
+                :label="`版本 ${v}`"
+                :value="v"
+              />
+            </el-select>
+            <el-checkbox v-model="showOnlyChanged" style="margin-left: 20px;">仅显示变更项</el-checkbox>
+          </div>
+        </div>
+        
+        <div class="compare-table-wrapper">
+          <el-table 
+            :data="filteredCompareData" 
+            border 
+            stripe 
+            max-height="500"
+            :row-class-name="getCompareRowClass"
+          >
+            <el-table-column type="index" label="序号" width="60" fixed />
+            <el-table-column prop="materialCode" label="物料编码" width="130" fixed />
+            <el-table-column prop="materialDesc" label="物料描述" min-width="150" show-overflow-tooltip fixed />
+            <el-table-column prop="planClass" label="计划分类" width="100" fixed />
+            
+            <el-table-column 
+              v-for="version in displayVersions" 
+              :key="version"
+              :label="`版本 ${version}`"
+              min-width="180"
+            >
+              <template #header>
+                <div class="version-header" :class="{ 'latest-version': version === maxVersion }">
+                  <span>版本 {{ version }}</span>
+                  <el-tag v-if="version === maxVersion" type="success" size="small" style="margin-left: 5px;">最新</el-tag>
+                  <el-tag v-if="version === minVersion" type="info" size="small" style="margin-left: 5px;">初始</el-tag>
                 </div>
-              </div>
-              <span v-else style="color: #67C23A;">无变更</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="80">
-            <template #default="scope">
-              <el-tag :type="scope.row.changes.hasChanges ? 'warning' : 'success'" size="small">
-                {{ scope.row.changes.hasChanges ? '已变更' : '无变更' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
+              </template>
+              <template #default="scope">
+                <div v-if="scope.row.versions[version]" class="version-cell" :class="getVersionCellClass(scope.row, version)">
+                  <div class="version-item">
+                    <span class="item-label">数量:</span>
+                    <span class="item-value">{{ scope.row.versions[version].quantity }}</span>
+                  </div>
+                  <div class="version-item">
+                    <span class="item-label">日期:</span>
+                    <span class="item-value">{{ formatDate(scope.row.versions[version].plannedDate) }}</span>
+                  </div>
+                  <div class="version-item" v-if="scope.row.versions[version].sfzz">
+                    <span class="item-label">自制:</span>
+                    <span class="item-value">{{ scope.row.versions[version].sfzz }}</span>
+                  </div>
+                  <div class="version-item" v-if="scope.row.versions[version].remarks">
+                    <span class="item-label">备注:</span>
+                    <span class="item-value">{{ scope.row.versions[version].remarks }}</span>
+                  </div>
+                </div>
+                <div v-else class="version-cell empty">
+                  <span class="empty-text">无数据</span>
+                </div>
+              </template>
+            </el-table-column>
+            
+            <el-table-column label="变更详情" min-width="220" fixed="right">
+              <template #default="scope">
+                <div v-if="scope.row.changes.hasChanges" class="change-details">
+                  <div v-for="(change, idx) in scope.row.changes.fields" :key="idx" class="change-item">
+                    <span class="change-field">{{ change.fieldName }}:</span>
+                    <span class="change-old">{{ formatChangeValue(change.original) }}</span>
+                    <el-icon class="change-arrow"><Right /></el-icon>
+                    <span class="change-new">{{ formatChangeValue(change.latest) }}</span>
+                  </div>
+                </div>
+                <el-tag v-else type="success" size="small">无变更</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+        
+        <div class="compare-legend">
+          <span class="legend-title">图例说明：</span>
+          <span class="legend-item">
+            <span class="legend-color added"></span>新增内容
+          </span>
+          <span class="legend-item">
+            <span class="legend-color removed"></span>删除内容
+          </span>
+          <span class="legend-item">
+            <span class="legend-color changed"></span>变更内容
+          </span>
+        </div>
       </div>
     </el-dialog>
 
@@ -488,9 +552,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Loading } from '@element-plus/icons-vue';
+import { Loading, Right } from '@element-plus/icons-vue';
 import { orderTrackingApi } from '../api';
 
 const ordersByStatus = ref<any>({
@@ -519,9 +583,37 @@ const orderDetail = ref<any>(null);
 const compareDialogVisible = ref(false);
 const compareLoading = ref(false);
 const compareData = ref<any>(null);
+const selectedCompareVersions = ref<number[]>([]);
+const showOnlyChanged = ref(false);
 
 const planHistoryDialogVisible = ref(false);
 const currentPlanHistory = ref<any[]>([]);
+
+const displayVersions = computed(() => {
+  if (!compareData.value?.versions) return [];
+  if (selectedCompareVersions.value.length === 0) {
+    return compareData.value.versions;
+  }
+  return selectedCompareVersions.value.sort((a, b) => a - b);
+});
+
+const maxVersion = computed(() => {
+  if (!compareData.value?.versions?.length) return 0;
+  return Math.max(...compareData.value.versions);
+});
+
+const minVersion = computed(() => {
+  if (!compareData.value?.versions?.length) return 0;
+  return Math.min(...compareData.value.versions);
+});
+
+const filteredCompareData = computed(() => {
+  if (!compareData.value?.comparison) return [];
+  if (showOnlyChanged.value) {
+    return compareData.value.comparison.filter((item: any) => item.changes.hasChanges);
+  }
+  return compareData.value.comparison;
+});
 
 const formatDate = (date: any) => {
   if (!date) return '-';
@@ -531,6 +623,42 @@ const formatDate = (date: any) => {
     month: '2-digit',
     day: '2-digit'
   });
+};
+
+const formatChangeValue = (value: any) => {
+  if (value === null || value === undefined || value === '') return '-';
+  if (value instanceof Date) return formatDate(value);
+  return String(value);
+};
+
+const getCompareRowClass = ({ row }: { row: any }) => {
+  if (row.changes.hasChanges) {
+    return 'row-changed';
+  }
+  return '';
+};
+
+const getVersionCellClass = (row: any, version: number) => {
+  if (!row.changes.hasChanges) return '';
+  
+  const changedFields = row.changes.fields.map((f: any) => f.field);
+  const versionData = row.versions[version];
+  if (!versionData) return 'cell-empty';
+  
+  const prevVersion = compareData.value?.versions?.find((v: number) => v < version);
+  if (!prevVersion) return '';
+  
+  const prevData = row.versions[prevVersion];
+  if (!prevData) return 'cell-added';
+  
+  let hasChange = false;
+  changedFields.forEach((field: string) => {
+    if (versionData[field] !== prevData[field]) {
+      hasChange = true;
+    }
+  });
+  
+  return hasChange ? 'cell-changed' : '';
 };
 
 const formatDateTime = (date: any) => {
@@ -632,6 +760,8 @@ const openCompareDialog = async (order: any) => {
   currentOrder.value = order;
   compareDialogVisible.value = true;
   compareLoading.value = true;
+  selectedCompareVersions.value = [];
+  showOnlyChanged.value = false;
   
   try {
     const response: any = await orderTrackingApi.comparePlans(order.djbH);
@@ -918,6 +1048,164 @@ onMounted(() => {
 
 .change-new {
   color: #67C23A;
+}
+
+.compare-header {
+  margin-bottom: 20px;
+}
+
+.version-selector {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.selector-label {
+  font-weight: 500;
+  color: #606266;
+  margin-right: 12px;
+}
+
+.compare-table-wrapper {
+  margin-top: 16px;
+}
+
+.version-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.latest-version {
+  font-weight: bold;
+}
+
+.version-cell {
+  padding: 8px;
+  font-size: 13px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.version-cell.empty {
+  background-color: #f5f5f5;
+  text-align: center;
+  padding: 20px 8px;
+}
+
+.empty-text {
+  color: #909399;
+  font-style: italic;
+}
+
+.version-item {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.version-item:last-child {
+  margin-bottom: 0;
+}
+
+.item-label {
+  color: #909399;
+  min-width: 40px;
+}
+
+.item-value {
+  color: #303133;
+  font-weight: 500;
+}
+
+.cell-changed {
+  background-color: #fff7e6;
+  border-left: 3px solid #fa8c16;
+}
+
+.cell-added {
+  background-color: #f6ffed;
+  border-left: 3px solid #52c41a;
+}
+
+.cell-empty {
+  background-color: #fff1f0;
+}
+
+:deep(.row-changed) {
+  background-color: #fafafa !important;
+}
+
+:deep(.row-changed:hover > td) {
+  background-color: #f5f5f5 !important;
+}
+
+.change-details {
+  font-size: 13px;
+}
+
+.change-details .change-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background-color: #fafafa;
+  border-radius: 4px;
+}
+
+.change-details .change-item:last-child {
+  margin-bottom: 0;
+}
+
+.change-details .change-field {
+  min-width: 70px;
+}
+
+.change-details .change-arrow {
+  font-size: 12px;
+}
+
+.compare-legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.legend-title {
+  font-weight: 500;
+  color: #606266;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #909399;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.legend-color.added {
+  background-color: #52c41a;
+}
+
+.legend-color.removed {
+  background-color: #ff4d4f;
+}
+
+.legend-color.changed {
+  background-color: #fa8c16;
 }
 
 @media screen and (max-width: 768px) {

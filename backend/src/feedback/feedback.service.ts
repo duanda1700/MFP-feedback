@@ -339,26 +339,26 @@ export class FeedbackService {
         });
 
         if (order) {
-          // 如果订单状态为"已确认"，首次反馈时更新为"进行中"
-          if (order.orderStatus === '已确认') {
-            await queryRunner.manager.update(
-              PurchaseOrder,
-              { djbH },
-              { 
-                feedbackStatus: orderFeedbackStatus,
-                orderStatus: '进行中'
-              },
-            );
-            console.log(`Updated order ${djbH} status from "已确认" to "进行中", feedback status to ${orderFeedbackStatus}`);
-          } else {
-            // 只更新反馈状态
-            await queryRunner.manager.update(
-              PurchaseOrder,
-              { djbH },
-              { feedbackStatus: orderFeedbackStatus },
-            );
-            console.log(`Updated order ${djbH} feedback status to ${orderFeedbackStatus}`);
+          // 根据反馈状态确定订单状态
+          let newOrderStatus = order.orderStatus;
+          
+          if (orderFeedbackStatus === '已完成') {
+            newOrderStatus = '已完成';
+          } else if (orderFeedbackStatus === '已延期') {
+            newOrderStatus = '已延期';
+          } else if (order.orderStatus === '已确认') {
+            newOrderStatus = '进行中';
           }
+          
+          await queryRunner.manager.update(
+            PurchaseOrder,
+            { djbH },
+            { 
+              feedbackStatus: orderFeedbackStatus,
+              orderStatus: newOrderStatus
+            },
+          );
+          console.log(`Updated order ${djbH}: orderStatus=${newOrderStatus}, feedbackStatus=${orderFeedbackStatus}`);
         }
       }
 
@@ -377,24 +377,24 @@ export class FeedbackService {
     
     const total = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中', '已延期'] })
       .getCount();
 
     const completed = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中', '已延期'] })
       .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '已完成' })
       .getCount();
 
     const inProgress = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中', '已延期'] })
       .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '进行中' })
       .getCount();
 
     const delayed = await orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] })
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中', '已延期'] })
       .andWhere('order.feedback_status = :feedbackStatus', { feedbackStatus: '已延期' })
       .getCount();
 
@@ -443,7 +443,7 @@ export class FeedbackService {
     
     const queryBuilder = orderRepo
       .createQueryBuilder('order')
-      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中'] });
+      .where('order.orderStatus IN (:...statuses)', { statuses: ['已确认', '进行中', '已延期'] });
 
     if (djbH) {
       queryBuilder.andWhere('order.djbH LIKE :djbH', { djbH: `%${djbH}%` });

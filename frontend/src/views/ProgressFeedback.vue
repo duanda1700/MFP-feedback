@@ -217,7 +217,7 @@
                     {{ scope.row.plannedDate ? formatDateOnly(scope.row.plannedDate) : '-' }}
                   </template>
                 </el-table-column>
-                <el-table-column prop="progressStatus" label="进展状态" width="120">
+                <el-table-column prop="progressStatus" label="进展状态" width="120" class-name="highlight-column">
                   <template #default="scope">
                     <el-select 
                       v-model="scope.row.progressStatus" 
@@ -234,7 +234,7 @@
                     </el-select>
                   </template>
                 </el-table-column>
-                <el-table-column label="完成数量" width="120">
+                <el-table-column label="完成数量" width="120" class-name="highlight-column">
                   <template #default="scope">
                     <el-input-number 
                       v-model="scope.row.finishedQuantity" 
@@ -245,7 +245,7 @@
                     />
                   </template>
                 </el-table-column>
-                <el-table-column label="实际交付日期" width="160">
+                <el-table-column label="实际交付日期" width="160" class-name="highlight-column">
                   <template #default="scope">
                     <el-date-picker 
                       v-model="scope.row.actualDeliveryDate" 
@@ -256,7 +256,7 @@
                     />
                   </template>
                 </el-table-column>
-                <el-table-column label="备注" min-width="150">
+                <el-table-column label="备注" min-width="150" class-name="highlight-column">
                   <template #default="scope">
                     <el-input 
                       v-model="scope.row.remarks" 
@@ -735,5 +735,13 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+:deep(.highlight-column) {
+  background-color: #e6f4ff !important;
+}
+
+:deep(.el-table__row .highlight-column) {
+  background-color: #e6f4ff !important;
 }
 </style>
