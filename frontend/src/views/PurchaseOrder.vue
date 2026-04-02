@@ -61,14 +61,6 @@
         <template #header>
           <div class="card-header">
             <span>采购订单列表</span>
-            <div class="header-actions">
-              <el-button type="primary" @click="handleBatchIssueTask" :disabled="selectedRows.length === 0">
-                批量下发任务
-              </el-button>
-              <el-button type="warning" @click="exportOrderList">
-                导出订单
-              </el-button>
-            </div>
           </div>
         </template>
         
@@ -367,17 +359,7 @@ const confirmIssueTask = async () => {
   });
 };
 
-// 导出订单列表
-const exportOrderList = async () => {
-  try {
-    // 这里应该调用后端API导出订单
-    // await purchaseOrderApi.exportList(searchForm);
-    ElMessage.success('订单导出成功');
-  } catch (error: any) {
-    console.error('Export order list error:', error);
-    ElMessage.error(error.message || '订单导出失败');
-  }
-};
+
 
 // 初始化
 onMounted(async () => {

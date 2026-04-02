@@ -153,9 +153,6 @@
         <template #header>
           <div class="recent-header">
             <span>最近待办</span>
-            <router-link to="/todo">
-              <el-link type="primary">查看全部</el-link>
-            </router-link>
           </div>
         </template>
         <el-table :data="recentTodos" style="width: 100%" v-loading="todosLoading" max-height="300">
