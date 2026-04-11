@@ -19,7 +19,14 @@ export const purchaseOrderApi = {
   issueOrder: (data: any) => request.post('/order/issue', data),
   updateStatus: (id: number, status: string) => request.put(`/order/update-status/${id}`, { status }),
   updatePlanStatus: (data: { materialCode: string; planStatus: string }) => request.put('/order/update-plan-status', data),
-  updateRemarks: (data: { materialCode: string; remarks: string }) => request.put('/order/update-remarks', data)
+  updateRemarks: (data: { materialCode: string; remarks: string }) => request.put('/order/update-remarks', data),
+  getOrderById: (id: number) => request.get(`/order/detail/${id}`),
+  previewOrderSplit: (data: any) => request.post('/order-split/preview', data),
+  executeOrderSplit: (data: any) => request.post('/order-split/execute', data),
+  getSplitHistory: (orderId: number) => request.get(`/order-split/history/${orderId}`),
+  cancelSplit: (splitRecordId: number) => request.post(`/order-split/cancel/${splitRecordId}`),
+  getSubOrders: (orderId: number) => request.get(`/order-split/sub-orders/${orderId}`),
+  getSplitDetail: (splitRecordId: number) => request.get(`/order-split/detail/${splitRecordId}`)
 };
 
 export const productionPlanApi = {

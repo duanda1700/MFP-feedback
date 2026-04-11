@@ -21,6 +21,7 @@ import { OrderTrackingModule } from './order-tracking/order-tracking.module';
 import { UserModule } from './user/user.module';
 import { TodoTaskModule } from './todo/todo-task.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { OrderSplitModule } from './order-split/order-split.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UserModule,
     TodoTaskModule,
     DashboardModule,
+    OrderSplitModule,
   ],
   controllers: [AppController],
   providers: [AppService],

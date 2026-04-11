@@ -39,6 +39,8 @@ let OrderTrackingService = class OrderTrackingService {
     async getOrdersByStatus() {
         const orders = await this.orderRepository
             .createQueryBuilder('order')
+            .where('order.orderStatus != :status', { status: '已拆分' })
+            .andWhere('order.orderType = :type', { type: 'ORIGINAL' })
             .orderBy('order.createTime', 'DESC')
             .getMany();
         const result = {
@@ -55,9 +57,13 @@ let OrderTrackingService = class OrderTrackingService {
                 feedbackCount: 0,
                 feedbackProgress: 0,
             };
-            const planCount = await this.productionPlanRepository.count({
-                where: { djbH: order.djbH, planStatus: '已确认' },
+            const allPlans = await this.productionPlanRepository.find({
+                where: { djbH: order.djbH },
             });
+            const maxVersion = allPlans.length > 0
+                ? Math.max(...allPlans.map((p) => p.version || 1))
+                : 1;
+            const planCount = allPlans.filter((p) => (p.version || 1) === maxVersion).length;
             const feedbackCount = await this.feedbackMainRepository.count({
                 where: { djbH: order.djbH },
             });
@@ -96,20 +102,13 @@ let OrderTrackingService = class OrderTrackingService {
         if (!order) {
             return null;
         }
-        const originalPlans = await this.productionPlanRepository
+        const allPlans = await this.productionPlanRepository
             .createQueryBuilder('plan')
             .where('plan.djbH = :djbH', { djbH })
-            .andWhere('plan.planStatus = :status', { status: '已确认' })
             .orderBy('plan.sortOrder', 'ASC')
             .getMany();
-        const latestVersions = new Map();
-        originalPlans.forEach((plan) => {
-            const key = `${plan.purchaseDetailsId}_${plan.planClass}`;
-            if (!latestVersions.has(key) || plan.version > latestVersions.get(key).version) {
-                latestVersions.set(key, plan);
-            }
-        });
-        const plans = Array.from(latestVersions.values());
+        const maxVersion = Math.max(...allPlans.map((p) => p.version || 1));
+        const plans = allPlans.filter((p) => (p.version || 1) === maxVersion);
         const plansWithFeedback = await Promise.all(plans.map(async (plan) => {
             const feedbackMain = await this.feedbackMainRepository.findOne({
                 where: {
@@ -159,63 +158,134 @@ let OrderTrackingService = class OrderTrackingService {
         };
     }
     async comparePlans(djbH) {
-        const originalPlans = await this.productionPlanRepository
+        const allPlans = await this.productionPlanRepository
             .createQueryBuilder('plan')
             .where('plan.djbH = :djbH', { djbH })
             .orderBy('plan.version', 'ASC')
             .addOrderBy('plan.sortOrder', 'ASC')
             .getMany();
-        const groupedByDetails = new Map();
-        originalPlans.forEach((plan) => {
-            const key = `${plan.purchaseDetailsId}_${plan.planClass}`;
-            if (!groupedByDetails.has(key)) {
-                groupedByDetails.set(key, []);
+        if (allPlans.length === 0) {
+            return {
+                djbH,
+                versions: [],
+                totalItems: 0,
+                changedItems: 0,
+                comparison: [],
+            };
+        }
+        const versionSet = new Set();
+        allPlans.forEach((plan) => {
+            versionSet.add(plan.version || 1);
+        });
+        const versions = Array.from(versionSet).sort((a, b) => a - b);
+        const groupedByKey = new Map();
+        allPlans.forEach((plan) => {
+            const key = `${plan.purchaseDetailsId || 0}_${plan.planClass || '生产计划'}`;
+            if (!groupedByKey.has(key)) {
+                groupedByKey.set(key, []);
             }
-            groupedByDetails.get(key).push(plan);
+            groupedByKey.get(key).push(plan);
         });
         const comparison = [];
-        groupedByDetails.forEach((versions, key) => {
-            if (versions.length > 1) {
-                const sortedVersions = versions.sort((a, b) => a.version - b.version);
-                const original = sortedVersions[0];
-                const latest = sortedVersions[sortedVersions.length - 1];
-                const changes = {
+        const compareFields = [
+            'quantity',
+            'plannedDate',
+            'materialDesc',
+            'materialCode',
+            'unit',
+            'sfzz',
+            'remarks',
+            'planType',
+            'changeType',
+        ];
+        groupedByKey.forEach((planVersions, key) => {
+            const versionMap = new Map();
+            planVersions.forEach((plan) => {
+                versionMap.set(plan.version || 1, plan);
+            });
+            const firstPlan = planVersions[0];
+            const itemComparison = {
+                key,
+                purchaseDetailsId: firstPlan.purchaseDetailsId,
+                materialCode: firstPlan.materialCode,
+                materialDesc: firstPlan.materialDesc,
+                planClass: firstPlan.planClass,
+                versions: {},
+                changes: {
                     hasChanges: false,
                     fields: [],
-                };
-                const compareFields = ['quantity', 'plannedDate', 'materialDesc', 'remarks'];
-                compareFields.forEach((field) => {
-                    const originalValue = original[field];
-                    const latestValue = latest[field];
-                    if (originalValue !== latestValue) {
-                        changes.hasChanges = true;
-                        changes.fields.push({
-                            field,
-                            original: originalValue,
-                            latest: latestValue,
-                        });
-                    }
-                });
-                comparison.push({
-                    key,
-                    purchaseDetailsId: original.purchaseDetailsId,
-                    materialCode: original.materialCode,
-                    materialDesc: original.materialDesc,
-                    planClass: original.planClass,
-                    originalVersion: original.version,
-                    latestVersion: latest.version,
-                    original,
-                    latest,
-                    changes,
-                });
+                },
+            };
+            versions.forEach((v) => {
+                const plan = versionMap.get(v);
+                if (plan) {
+                    itemComparison.versions[v] = {
+                        id: plan.id,
+                        quantity: plan.quantity,
+                        plannedDate: plan.plannedDate,
+                        materialDesc: plan.materialDesc,
+                        materialCode: plan.materialCode,
+                        unit: plan.unit,
+                        sfzz: plan.sfzz,
+                        remarks: plan.remarks,
+                        planType: plan.planType,
+                        changeType: plan.changeType,
+                        sortOrder: plan.sortOrder,
+                    };
+                }
+                else {
+                    itemComparison.versions[v] = null;
+                }
+            });
+            if (versions.length > 1) {
+                const firstVersion = versions[0];
+                const lastVersion = versions[versions.length - 1];
+                const firstPlanData = versionMap.get(firstVersion);
+                const lastPlanData = versionMap.get(lastVersion);
+                if (firstPlanData && lastPlanData) {
+                    compareFields.forEach((field) => {
+                        const originalValue = firstPlanData[field];
+                        const latestValue = lastPlanData[field];
+                        if (originalValue !== latestValue) {
+                            itemComparison.changes.hasChanges = true;
+                            itemComparison.changes.fields.push({
+                                field,
+                                original: originalValue,
+                                latest: latestValue,
+                                fieldName: this.getFieldDisplayName(field),
+                            });
+                        }
+                    });
+                }
             }
+            comparison.push(itemComparison);
+        });
+        comparison.sort((a, b) => {
+            const aSort = a.versions[versions[0]]?.sortOrder || 0;
+            const bSort = b.versions[versions[0]]?.sortOrder || 0;
+            return aSort - bSort;
         });
         return {
             djbH,
-            totalItems: groupedByDetails.size,
+            versions,
+            totalItems: groupedByKey.size,
             changedItems: comparison.filter((c) => c.changes.hasChanges).length,
             comparison,
         };
+    }
+    getFieldDisplayName(field) {
+        const fieldNames = {
+            quantity: '数量',
+            plannedDate: '计划日期',
+            materialDesc: '物料描述',
+            materialCode: '物料编码',
+            unit: '单位',
+            sfzz: '是否自制',
+            remarks: '备注',
+            planType: '计划类型',
+            changeType: '变更类型',
+        };
+        return fieldNames[field] || field;
     }
     async getOrderStatistics() {
         const total = await this.orderRepository.count();

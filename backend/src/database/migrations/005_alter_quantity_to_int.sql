@@ -1,0 +1,18 @@
+-- 将PURCHASE_DETAILS表的quantity字段从decimal改为int
+
+-- 1. 修改quantity字段类型为int
+ALTER TABLE PURCHASE_DETAILS 
+MODIFY COLUMN quantity INT NOT NULL COMMENT '数量';
+
+-- 2. 验证修改结果
+SELECT 
+    COLUMN_NAME,
+    COLUMN_TYPE,
+    IS_NULLABLE,
+    COLUMN_COMMENT
+FROM 
+    INFORMATION_SCHEMA.COLUMNS
+WHERE 
+    TABLE_SCHEMA = 'mfp_feedback'
+    AND TABLE_NAME = 'PURCHASE_DETAILS'
+    AND COLUMN_NAME = 'quantity';

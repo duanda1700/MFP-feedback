@@ -22,6 +22,12 @@ export declare class PurchaseOrder {
     supplierCode: string;
     supplierName: string;
     supplierId: number;
+    parentOrderId: number;
+    orderType: string;
+    splitCount: number;
+    splitBatchNo: string;
+    splitTime: Date;
+    splitOperator: string;
     purchaseManager: string;
     createTime: Date;
     updateTime: Date;

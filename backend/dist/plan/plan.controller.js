@@ -35,7 +35,7 @@ let PlanController = class PlanController {
         return this.planService.updatePlan(id, planData);
     }
     async importPlan(body) {
-        return this.planService.importPlan(body.plans, body.createdBy, body.createdName, body.orderId);
+        return this.planService.importPlan(body.plans, body.createdBy, body.createdName, body.orderId, body.isFirstConfirmation);
     }
     async submitApproval(id) {
         return this.planService.submitApproval(id);

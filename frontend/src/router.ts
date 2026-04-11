@@ -78,6 +78,12 @@ const routes = [
         name: 'PurchaseOrderIssue',
         component: () => import('./views/PurchaseOrderIssue.vue'),
         meta: { title: '采购订单下发', permissions: ['purchase_order:issue'] }
+      },
+      {
+        path: 'order-split/:id',
+        name: 'OrderSplit',
+        component: () => import('./views/OrderSplit.vue'),
+        meta: { title: '订单拆分', permissions: ['order:split'] }
       }
     ]
   },

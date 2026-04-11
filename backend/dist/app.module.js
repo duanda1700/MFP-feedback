@@ -30,6 +30,7 @@ const order_tracking_module_1 = require("./order-tracking/order-tracking.module"
 const user_module_1 = require("./user/user.module");
 const todo_task_module_1 = require("./todo/todo-task.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
+const order_split_module_1 = require("./order-split/order-split.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -55,6 +56,7 @@ exports.AppModule = AppModule = __decorate([
             user_module_1.UserModule,
             todo_task_module_1.TodoTaskModule,
             dashboard_module_1.DashboardModule,
+            order_split_module_1.OrderSplitModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

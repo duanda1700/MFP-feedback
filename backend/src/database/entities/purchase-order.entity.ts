@@ -83,6 +83,31 @@ export class PurchaseOrder {
   @Column({ name: 'supplier_id', type: 'int', nullable: true })
   supplierId: number;
 
+  @Column({ name: 'parent_order_id', type: 'int', nullable: true })
+  parentOrderId: number;
+
+  @Column({ 
+    name: 'order_type', 
+    type: 'varchar', 
+    length: 20, 
+    nullable: false, 
+    default: 'ORIGINAL',
+    comment: '订单类型：ORIGINAL-原始订单, SPLIT-子订单'
+  })
+  orderType: string;
+
+  @Column({ name: 'split_count', type: 'int', nullable: true })
+  splitCount: number;
+
+  @Column({ name: 'split_batch_no', type: 'varchar', length: 50, nullable: true })
+  splitBatchNo: string;
+
+  @Column({ name: 'split_time', type: 'datetime', nullable: true })
+  splitTime: Date;
+
+  @Column({ name: 'split_operator', type: 'varchar', length: 50, nullable: true })
+  splitOperator: string;
+
   @Column({ name: 'purchase_manager', type: 'varchar', length: 20, nullable: true })
   purchaseManager: string;
 

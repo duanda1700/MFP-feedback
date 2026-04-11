@@ -26,6 +26,8 @@ export class OrderTrackingService {
   async getOrdersByStatus() {
     const orders = await this.orderRepository
       .createQueryBuilder('order')
+      .where('order.orderStatus != :status', { status: '已拆分' })
+      .andWhere('order.orderType = :type', { type: 'ORIGINAL' })
       .orderBy('order.createTime', 'DESC')
       .getMany();
 

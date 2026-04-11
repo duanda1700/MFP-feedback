@@ -35,6 +35,12 @@ let PurchaseOrder = class PurchaseOrder {
     supplierCode;
     supplierName;
     supplierId;
+    parentOrderId;
+    orderType;
+    splitCount;
+    splitBatchNo;
+    splitTime;
+    splitOperator;
     purchaseManager;
     createTime;
     updateTime;
@@ -143,6 +149,37 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'supplier_id', type: 'int', nullable: true }),
     __metadata("design:type", Number)
 ], PurchaseOrder.prototype, "supplierId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'parent_order_id', type: 'int', nullable: true }),
+    __metadata("design:type", Number)
+], PurchaseOrder.prototype, "parentOrderId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'order_type',
+        type: 'varchar',
+        length: 20,
+        nullable: false,
+        default: 'ORIGINAL',
+        comment: '订单类型：ORIGINAL-原始订单, SPLIT-子订单'
+    }),
+    __metadata("design:type", String)
+], PurchaseOrder.prototype, "orderType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'split_count', type: 'int', nullable: true }),
+    __metadata("design:type", Number)
+], PurchaseOrder.prototype, "splitCount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'split_batch_no', type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrder.prototype, "splitBatchNo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'split_time', type: 'datetime', nullable: true }),
+    __metadata("design:type", Date)
+], PurchaseOrder.prototype, "splitTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'split_operator', type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], PurchaseOrder.prototype, "splitOperator", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'purchase_manager', type: 'varchar', length: 20, nullable: true }),
     __metadata("design:type", String)

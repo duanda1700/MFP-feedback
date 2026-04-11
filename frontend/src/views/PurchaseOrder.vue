@@ -85,9 +85,17 @@
             </template>
           </el-table-column>
           <el-table-column prop="setCount" label="台份" width="100" />
-          <el-table-column label="操作" width="120" fixed="right">
+          <el-table-column label="操作" width="200" fixed="right">
             <template #default="scope">
               <el-button size="small" type="primary" @click="handleSingleIssueTask(scope.row)">下发</el-button>
+              <el-button 
+                size="small" 
+                type="warning" 
+                @click="handleSplitOrder(scope.row)"
+                v-if="scope.row.orderStatus === '待下发' && scope.row.orderType !== 'SPLIT'"
+              >
+                拆分
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -312,20 +320,16 @@ const handleSelectionChange = (rows: any[]) => {
   selectedRows.value = rows;
 };
 
-// 批量下发任务
-const handleBatchIssueTask = () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning('请选择要下发的订单');
-    return;
-  }
-  issueTaskForm.supplierId = selectedRows.value[0].supplierId;
-  issueTaskDialogVisible.value = true;
-};
-
 // 单个下发任务
 const handleSingleIssueTask = (row: any) => {
   // 跳转到订单下发编辑页面
   router.push(`/app/purchase-order/issue/${row.id}`);
+};
+
+// 订单拆分
+const handleSplitOrder = (row: any) => {
+  // 跳转到订单拆分页面
+  router.push(`/app/order-split/${row.id}`);
 };
 
 // 确认下发任务

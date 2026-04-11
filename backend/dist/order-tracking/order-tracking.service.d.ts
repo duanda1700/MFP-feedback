@@ -15,7 +15,39 @@ export declare class OrderTrackingService {
     getOrdersByStatus(): Promise<any>;
     getOrderDetail(djbH: string): Promise<{
         order: PurchaseOrder;
-        plans: any[];
+        plans: {
+            feedbackStatus: string;
+            latestFeedback: any;
+            feedbackHistory: any[];
+            id: string;
+            purchaseDetailsId: number;
+            setCount: string;
+            drawingNo: string;
+            djbH: string;
+            planName: string;
+            planType: string;
+            planClass: string;
+            planDept: string;
+            planMaker: string;
+            planDate: Date;
+            planStatus: string;
+            materialCode: string;
+            materialDesc: string;
+            quantity: number;
+            unit: string;
+            plannedDate: Date;
+            jhrq: Date;
+            changeType: string;
+            sfzz: string;
+            finishedQuantity: number;
+            isKeyMaterial: string;
+            productionLine: string;
+            remarks: string;
+            version: number;
+            sortOrder: number;
+            createTime: Date;
+            updateTime: Date;
+        }[];
         statistics: {
             totalPlans: number;
             completedPlans: number;
@@ -26,10 +58,12 @@ export declare class OrderTrackingService {
     } | null>;
     comparePlans(djbH: string): Promise<{
         djbH: string;
+        versions: number[];
         totalItems: number;
         changedItems: number;
         comparison: any[];
     }>;
+    private getFieldDisplayName;
     getOrderStatistics(): Promise<{
         total: number;
         pending: number;

@@ -16,6 +16,7 @@ export declare class PlanController {
         createdBy: number;
         createdName: string;
         orderId?: number;
+        isFirstConfirmation?: boolean;
     }): Promise<{
         success: boolean;
         count: number;

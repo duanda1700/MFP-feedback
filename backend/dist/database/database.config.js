@@ -19,6 +19,8 @@ const role_entity_1 = require("./entities/role.entity");
 const permission_entity_1 = require("./entities/permission.entity");
 const user_role_entity_1 = require("./entities/user-role.entity");
 const todo_task_entity_1 = require("./entities/todo-task.entity");
+const order_split_record_entity_1 = require("./entities/order-split-record.entity");
+const order_split_detail_entity_1 = require("./entities/order-split-detail.entity");
 exports.databaseConfig = {
     type: 'mysql',
     host: 'localhost',
@@ -45,6 +47,8 @@ exports.databaseConfig = {
         permission_entity_1.Permission,
         user_role_entity_1.UserRole,
         todo_task_entity_1.TodoTask,
+        order_split_record_entity_1.OrderSplitRecord,
+        order_split_detail_entity_1.OrderSplitDetail,
     ],
     synchronize: false,
     logging: true,

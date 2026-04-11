@@ -17,6 +17,8 @@ import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { UserRole } from './entities/user-role.entity';
 import { TodoTask } from './entities/todo-task.entity';
+import { OrderSplitRecord } from './entities/order-split-record.entity';
+import { OrderSplitDetail } from './entities/order-split-detail.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'mysql',
@@ -44,6 +46,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Permission,
     UserRole,
     TodoTask,
+    OrderSplitRecord,
+    OrderSplitDetail,
   ],
   synchronize: false,
   logging: true,

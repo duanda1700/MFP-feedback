@@ -18,7 +18,7 @@ export declare class PlanService {
     getPlanDetail(id: string): Promise<ProductionPlan>;
     createPlan(planData: any): Promise<ProductionPlan[]>;
     updatePlan(id: string, planData: any): Promise<ProductionPlan>;
-    importPlan(planDataList: any[], createdBy: number, createdName: string, orderId?: number): Promise<{
+    importPlan(planDataList: any[], createdBy: number, createdName: string, orderId?: number, isFirstConfirmation?: boolean): Promise<{
         success: boolean;
         count: number;
         message: string;

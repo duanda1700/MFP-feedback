@@ -26,7 +26,7 @@ export class PurchaseDetails {
   @Column({ name: 'material_group', type: 'varchar', length: 50, nullable: true })
   materialGroup: string;
 
-  @Column({ name: 'quantity', type: 'decimal', precision: 18, scale: 6, nullable: false })
+  @Column({ name: 'quantity', type: 'int', nullable: false })
   quantity: number;
 
   @Column({ name: 'plan_date', type: 'datetime', nullable: false })

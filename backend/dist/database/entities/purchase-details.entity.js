@@ -70,7 +70,7 @@ __decorate([
     __metadata("design:type", String)
 ], PurchaseDetails.prototype, "materialGroup", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'quantity', type: 'decimal', precision: 18, scale: 6, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'quantity', type: 'int', nullable: false }),
     __metadata("design:type", Number)
 ], PurchaseDetails.prototype, "quantity", void 0);
 __decorate([

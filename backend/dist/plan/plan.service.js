@@ -77,7 +77,7 @@ let PlanService = class PlanService {
         Object.assign(plan, planData);
         return this.planRepository.save(plan);
     }
-    async importPlan(planDataList, createdBy, createdName, orderId) {
+    async importPlan(planDataList, createdBy, createdName, orderId, isFirstConfirmation) {
         let savedCount = 0;
         if (planDataList.length === 0) {
             return {
@@ -107,7 +107,7 @@ let PlanService = class PlanService {
             await this.planRepository.save(plan);
             savedCount++;
         }
-        if (orderId) {
+        if (orderId && isFirstConfirmation) {
             const order = await this.orderRepository.findOne({ where: { id: orderId } });
             if (order) {
                 order.orderStatus = '已确认';
@@ -115,13 +115,27 @@ let PlanService = class PlanService {
                 console.log(`Updated order ${orderId} status to "已确认"`);
                 const operationLog = this.operationLogRepository.create({
                     operationType: '生产计划确认',
-                    operationDesc: `订单 ${order.djbH} 确认提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
+                    operationDesc: `订单 ${order.djbH} 首次确认提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
                     operator: createdName,
                     operatedAt: new Date(),
                     relatedId: orderId.toString()
                 });
                 await this.operationLogRepository.save(operationLog);
                 console.log(`Recorded operation log for order ${orderId}`);
+            }
+        }
+        else if (orderId) {
+            const order = await this.orderRepository.findOne({ where: { id: orderId } });
+            if (order) {
+                const operationLog = this.operationLogRepository.create({
+                    operationType: '生产计划更新',
+                    operationDesc: `订单 ${order.djbH} 更新模板提交，版本号: ${nextVersion}，计划数量: ${savedCount}`,
+                    operator: createdName,
+                    operatedAt: new Date(),
+                    relatedId: orderId.toString()
+                });
+                await this.operationLogRepository.save(operationLog);
+                console.log(`Recorded operation log for order ${orderId} (update template)`);
             }
         }
         return {
